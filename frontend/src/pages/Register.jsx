@@ -37,36 +37,62 @@ function Register() {
     setError("");
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
 
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.password ||
-      !formData.confirmPassword
-    ) {
-      setError("Please fill in all fields.");
-      return;
-    }
+  
+    const handleSubmit = async (e) => {
+      e.preventDefault();
 
-    if (formData.password.length < 6) {
-      setError("Password must contain at least 6 characters.");
-      return;
-    }
+      setError("");
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+      if (
+        !formData.name ||
+        !formData.email ||
+        !formData.password ||
+        !formData.confirmPassword
+      ) {
+        setError("Please fill in all fields.");
+        return;
+      }
 
-    /*
-      Backend connection will be added later.
-      For now, navigate to dashboard.
-    */
+      if (formData.password.length < 6) {
+        setError("Password must contain at least 6 characters.");
+        return;
+      }
 
-    navigate("/dashboard");
-  };
+      if (formData.password !== formData.confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:5000/api/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.message || "Registration failed.");
+          return;
+        }
+
+        console.log("Registration successful:", data);
+
+        navigate("/login");
+      } catch (error) {
+        console.error("Registration error:", error);
+        setError("Unable to connect to the server.");
+      }
+    };
+
 
   return (
     <div className="auth-page">

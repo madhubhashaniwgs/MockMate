@@ -13,19 +13,46 @@ import "./Login.css";
 function Login() {
   const navigate = useNavigate();
 
-  const handleDemoLogin = () => {
-    // Temporary demo authentication
-    localStorage.setItem("demoUser", "true");
+  const handleLogin = async (event) => {
+  event.preventDefault();
 
-    navigate("/dashboard");
-  };
+  const email = event.target.email.value;
+  const password = event.target.password.value;
 
-  const handleLogin = (event) => {
-    event.preventDefault();
+  try {
+    const response = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
 
-    // Real authentication will be connected
-    // when the backend and JWT are implemented.
-    navigate("/dashboard");
+    const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.message || "Invalid email or password.");
+          return;
+        }
+
+        console.log("Login successful:", data);
+
+        // Save JWT token
+        localStorage.setItem("token", data.token);
+
+        // Save user information if backend sends it
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+
+        navigate("/dashboard");
+      } catch (error) {
+        console.error("Login error:", error);
+        alert("Unable to connect to the server.");
+      }
   };
 
   return (
@@ -163,32 +190,7 @@ function Login() {
 
           <div className="login-divider">
 
-            <span />
-            <p>or</p>
-            <span />
-
           </div>
-
-
-          {/* Demo Login */}
-
-          <button
-            type="button"
-            className="demo-login-btn"
-            onClick={handleDemoLogin}
-          >
-
-            <Sparkles size={16} />
-
-            Continue as Demo User
-
-          </button>
-
-
-          <p className="demo-note">
-            Demo access is available while the backend
-            authentication is under development.
-          </p>
 
 
           {/* Register */}

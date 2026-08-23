@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import {
@@ -14,44 +15,95 @@ import {
 import "./InterviewHistory.css";
 
 function InterviewHistory() {
-  const interviews = [
-    {
-      id: 1,
-      role: "Frontend Developer",
-      difficulty: "Medium",
-      date: "August 21, 2026",
-      score: 82,
-      questions: 5,
-      status: "Completed",
-    },
-    {
-      id: 2,
-      role: "React Developer",
-      difficulty: "Hard",
-      date: "August 18, 2026",
-      score: 76,
-      questions: 5,
-      status: "Completed",
-    },
-    {
-      id: 3,
-      role: "Software Engineer",
-      difficulty: "Medium",
-      date: "August 15, 2026",
-      score: 88,
-      questions: 5,
-      status: "Completed",
-    },
-    {
-      id: 4,
-      role: "Frontend Developer",
-      difficulty: "Easy",
-      date: "August 11, 2026",
-      score: 71,
-      questions: 5,
-      status: "Completed",
-    },
-  ];
+  
+      const [interviews, setInterviews] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState("");
+
+      useEffect(() => {
+        const fetchInterviews = async () => {
+          try {
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+              setError("You are not authenticated.");
+              setLoading(false);
+              return;
+            }
+
+            const response = await fetch(
+              "http://localhost:5000/api/interviews",
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              setError(data.message || "Failed to load interview history.");
+              setLoading(false);
+              return;
+            }
+
+            setInterviews(
+            (data.interviews || []).map((interview) => ({
+              id: interview.id,
+              role: interview.job_role,
+              difficulty: interview.difficulty,
+              date: new Date(interview.created_at).toLocaleDateString(
+                "en-US",
+                {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }
+              ),
+              score: interview.score ?? 0,
+              questions: interview.question_count,
+              status: interview.status,
+            }))
+          );
+
+          } catch (error) {
+            console.error("Interview history error:", error);
+            setError("Unable to connect to the server.");
+          } finally {
+            setLoading(false);
+          }
+        };
+
+        fetchInterviews();
+      }, []);
+
+
+    const averageScore =
+    interviews.length > 0
+      ? Math.round(
+          interviews.reduce(
+            (total, interview) => total + (interview.score || 0),
+            0
+          ) / interviews.length
+        )
+      : 0;
+
+      const roleCounts = interviews.reduce((counts, interview) => {
+      counts[interview.role] =
+        (counts[interview.role] || 0) + 1;
+
+      return counts;
+    }, {});
+
+    const mostPracticedRole =
+      Object.keys(roleCounts).length > 0
+        ? Object.keys(roleCounts).reduce((a, b) =>
+            roleCounts[a] > roleCounts[b] ? a : b
+          )
+        : "None";
+        
 
   const getScoreClass = (score) => {
     if (score >= 80) {
@@ -64,6 +116,35 @@ function InterviewHistory() {
 
     return "score-low";
   };
+
+      if (loading) {
+      return (
+        <div className="history-page">
+          <main className="history-container">
+            <section className="history-heading">
+              <div>
+                <h1>Loading interview history...</h1>
+              </div>
+            </section>
+          </main>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="history-page">
+          <main className="history-container">
+            <section className="history-heading">
+              <div>
+                <h1>Unable to load interview history</h1>
+                <span>{error}</span>
+              </div>
+            </section>
+          </main>
+        </div>
+      );
+    }
 
   return (
     <div className="history-page">
@@ -159,8 +240,8 @@ function InterviewHistory() {
               </span>
 
               <strong>
-                79%
-              </strong>
+              {averageScore}%
+            </strong> 
             </div>
 
           </div>
@@ -178,7 +259,7 @@ function InterviewHistory() {
               </span>
 
               <strong>
-                Frontend
+                {mostPracticedRole}
               </strong>
             </div>
 
@@ -341,10 +422,10 @@ function InterviewHistory() {
                       <Link
                         to="/interview-result"
                         state={{
+                          interviewId: interview.id,
                           jobRole: interview.role,
                           difficulty: interview.difficulty,
-                          questionCount:
-                            interview.questions,
+                          questionCount: interview.questions,
                         }}
                         className="view-result-btn"
                       >
@@ -430,6 +511,7 @@ function InterviewHistory() {
                 <Link
                   to="/interview-result"
                   state={{
+                    interviewId: interview.id,
                     jobRole: interview.role,
                     difficulty: interview.difficulty,
                     questionCount: interview.questions,

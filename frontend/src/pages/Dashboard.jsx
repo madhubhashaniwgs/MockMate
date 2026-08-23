@@ -11,6 +11,7 @@ import {
   LogOut,
 } from "lucide-react";
 
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import "./Dashboard.css";
@@ -18,56 +19,146 @@ import "./Dashboard.css";
 function Dashboard() {
   const navigate = useNavigate();
 
+  // ===============================
+  // USER
+  // ===============================
+
+  const [user] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  const userName = user?.name || "User";
+  const userInitial = userName.charAt(0).toUpperCase();
+
+  // ===============================
+  // INTERVIEW DATA
+  // ===============================
+
+  const [interviews, setInterviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // ===============================
+  // FETCH INTERVIEWS
+  // ===============================
+
+  useEffect(() => {
+    const fetchInterviews = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          setError("You are not authenticated.");
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(
+          "http://localhost:5000/api/interviews",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message || "Failed to load interviews"
+          );
+        }
+
+        setInterviews(data.interviews || []);
+
+      } catch (error) {
+        console.error(
+          "Dashboard interview error:",
+          error
+        );
+
+        setError("Unable to load interview data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInterviews();
+  }, []);
+
+  // ===============================
+  // STATISTICS
+  // ===============================
+
+  const totalInterviews = interviews.length;
+
+  const averageScore =
+    totalInterviews > 0
+      ? Math.round(
+          interviews.reduce(
+            (total, interview) =>
+              total + Number(interview.score || 0),
+            0
+          ) / totalInterviews
+        )
+      : 0;
+
+  const bestScore =
+    totalInterviews > 0
+      ? Math.max(
+          ...interviews.map((interview) =>
+            Number(interview.score || 0)
+          )
+        )
+      : 0;
+
   const stats = [
     {
       icon: <MessageSquare size={20} />,
-      value: "12",
+      value: totalInterviews,
       label: "Total Interviews",
       description: "Completed interviews",
     },
     {
       icon: <BarChart3 size={20} />,
-      value: "78%",
+      value: `${averageScore}%`,
       label: "Average Score",
       description: "Overall performance",
     },
     {
       icon: <TrendingUp size={20} />,
-      value: "91%",
+      value: `${bestScore}%`,
       label: "Best Score",
       description: "Highest interview score",
     },
   ];
 
-  const recentInterviews = [
-    {
-      role: "Frontend Developer",
-      date: "Aug 20, 2026",
-      score: "84%",
-      difficulty: "Medium",
-    },
-    {
-      role: "Software Engineer",
-      date: "Aug 18, 2026",
-      score: "76%",
-      difficulty: "Hard",
-    },
-    {
-      role: "React Developer",
-      date: "Aug 15, 2026",
-      score: "72%",
-      difficulty: "Medium",
-    },
-  ];
+  // ===============================
+  // RECENT INTERVIEWS
+  // ===============================
+
+  const recentInterviews = interviews.slice(0, 3);
+
+  // ===============================
+  // LOGOUT
+  // ===============================
 
   const handleLogout = () => {
-    navigate("/");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("demoUser");
+
+    navigate("/login", { replace: true });
   };
 
   return (
     <div className="dashboard-page">
 
-      {/* Sidebar */}
+      {/* ================= SIDEBAR ================= */}
 
       <aside className="dashboard-sidebar">
 
@@ -111,7 +202,7 @@ function Dashboard() {
           </div>
 
           <Link
-            to="/dashboard"
+            to="/performance"
             className="sidebar-link"
           >
             <BarChart3 size={18} />
@@ -135,11 +226,11 @@ function Dashboard() {
       </aside>
 
 
-      {/* Main Content */}
+      {/* ================= MAIN CONTENT ================= */}
 
       <main className="dashboard-main">
 
-        {/* Header */}
+        {/* ================= HEADER ================= */}
 
         <header className="dashboard-header">
 
@@ -156,17 +247,19 @@ function Dashboard() {
           <div className="dashboard-profile">
 
             <div className="profile-avatar">
-              M
+              {userInitial}
             </div>
 
             <div className="profile-info">
+
               <strong>
-                User
+                {userName}
               </strong>
 
               <span>
                 Interview Candidate
               </span>
+
             </div>
 
           </div>
@@ -174,7 +267,7 @@ function Dashboard() {
         </header>
 
 
-        {/* Main CTA */}
+        {/* ================= WELCOME ================= */}
 
         <section className="dashboard-welcome">
 
@@ -212,7 +305,7 @@ function Dashboard() {
         </section>
 
 
-        {/* Statistics */}
+        {/* ================= STATISTICS ================= */}
 
         <section className="stats-grid">
 
@@ -228,7 +321,7 @@ function Dashboard() {
               </div>
 
               <h3>
-                {item.value}
+                {loading ? "..." : item.value}
               </h3>
 
               <p>
@@ -246,13 +339,14 @@ function Dashboard() {
         </section>
 
 
-        {/* Recent Interviews */}
+        {/* ================= RECENT INTERVIEWS ================= */}
 
         <section className="dashboard-panel">
 
           <div className="panel-header">
 
             <div>
+
               <h2>
                 Recent Interviews
               </h2>
@@ -260,6 +354,7 @@ function Dashboard() {
               <p>
                 Review your latest interview attempts
               </p>
+
             </div>
 
             <Link to="/history">
@@ -272,53 +367,85 @@ function Dashboard() {
 
           <div className="interview-list">
 
-            {recentInterviews.map((interview, index) => (
+            {loading ? (
 
-              <div
-                className="interview-row"
-                key={index}
-              >
-
-                <div className="interview-icon">
-                  <MessageSquare size={18} />
-                </div>
-
-                <div className="interview-info">
-
-                  <h3>
-                    {interview.role}
-                  </h3>
-
-                  <span>
-                    <Clock3 size={13} />
-                    {interview.date}
-                  </span>
-
-                </div>
-
-                <div className="interview-difficulty">
-                  {interview.difficulty}
-                </div>
-
-                <div className="interview-score">
-                  {interview.score}
-                </div>
-
-                <ChevronRight
-                  size={17}
-                  className="row-arrow"
-                />
-
+              <div className="dashboard-empty-state">
+                Loading recent interviews...
               </div>
 
-            ))}
+            ) : error ? (
+
+              <div className="dashboard-empty-state">
+                {error}
+              </div>
+
+            ) : recentInterviews.length === 0 ? (
+
+              <div className="dashboard-empty-state">
+                No interviews completed yet.
+              </div>
+
+            ) : (
+
+              recentInterviews.map((interview) => (
+
+                <div
+                  className="interview-row"
+                  key={interview.id}
+                >
+
+                  <div className="interview-icon">
+                    <MessageSquare size={18} />
+                  </div>
+
+                  <div className="interview-info">
+
+                    <h3>
+                      {interview.job_role}
+                    </h3>
+
+                    <span>
+                      <Clock3 size={13} />
+
+                      {new Date(
+                        interview.created_at
+                      ).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
+                    </span>
+
+                  </div>
+
+                  <div className="interview-difficulty">
+                    {interview.difficulty}
+                  </div>
+
+                  <div className="interview-score">
+                    {interview.score ?? 0}%
+                  </div>
+
+                  <ChevronRight
+                    size={17}
+                    className="row-arrow"
+                  />
+
+                </div>
+
+              ))
+
+            )}
 
           </div>
 
         </section>
 
 
-        {/* Bottom CTA */}
+        {/* ================= BOTTOM CTA ================= */}
 
         <section className="dashboard-bottom-cta">
 
