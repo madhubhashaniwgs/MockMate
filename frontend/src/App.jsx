@@ -11,6 +11,8 @@ import MockInterview from "./pages/MockInterview";
 import Performance from "./pages/Performance";
 import Profile from "./pages/Profile";
 import ChangePassword from "./pages/ChangePassword";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -26,6 +28,17 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         <Route path="/register" element={<Register />} />
+
+        
+          <Route
+            path="/forgot-password"
+            element={<ForgotPassword />}
+          />
+
+          <Route
+            path="/reset-password"
+            element={<ResetPassword />}
+          />
 
 
         {/* Protected Routes */}
@@ -70,6 +83,9 @@ function App() {
             path="/change-password"
             element={<ChangePassword />}
           />
+
+          
+
 
         </Route>
 
