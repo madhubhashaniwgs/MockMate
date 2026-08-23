@@ -19,14 +19,20 @@ function MockInterview() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Interview setup data
+  // ===============================
+  // INTERVIEW SETUP DATA
+  // ===============================
+
   const {
     jobRole = "Frontend Developer",
     difficulty = "Medium",
     questionCount = 5,
   } = location.state || {};
 
-  // Interview questions
+  // ===============================
+  // INTERVIEW QUESTIONS
+  // ===============================
+
   const interviewQuestions = [
     {
       id: 1,
@@ -55,29 +61,51 @@ function MockInterview() {
     },
   ];
 
-  // Limit questions according to selected question count
   const questions = interviewQuestions.slice(
     0,
     Math.min(Number(questionCount), interviewQuestions.length)
   );
 
-  // States
+  // ===============================
+  // STATES
+  // ===============================
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
+
   const [answer, setAnswer] = useState("");
+
   const [answers, setAnswers] = useState([]);
+
   const [showFeedback, setShowFeedback] = useState(false);
+
   const [timeLeft, setTimeLeft] = useState(120);
+
   const [saving, setSaving] = useState(false);
 
-  const currentQuestionData = questions[currentQuestion];
+  const [evaluating, setEvaluating] = useState(false);
 
-  // Progress
+  const [evaluationError, setEvaluationError] = useState("");
+
+  const [currentEvaluation, setCurrentEvaluation] =
+    useState(null);
+
+  const currentQuestionData =
+    questions[currentQuestion];
+
+  // ===============================
+  // PROGRESS
+  // ===============================
+
   const progress =
     ((currentQuestion + 1) / questions.length) * 100;
 
-  // Format timer
+  // ===============================
+  // TIMER
+  // ===============================
+
   const formatTime = () => {
     const minutes = Math.floor(timeLeft / 60);
+
     const seconds = timeLeft % 60;
 
     return `${minutes}:${seconds
@@ -86,13 +114,15 @@ function MockInterview() {
   };
 
   // Reset timer for every question
+
   useEffect(() => {
     setTimeLeft(120);
   }, [currentQuestion]);
 
   // Countdown timer
+
   useEffect(() => {
-    if (showFeedback) {
+    if (showFeedback || evaluating) {
       return;
     }
 
@@ -112,199 +142,335 @@ function MockInterview() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, showFeedback]);
+  }, [timeLeft, showFeedback, evaluating]);
 
-  // Submit answer
-  const handleSubmitAnswer = () => {
-    if (!answer.trim()) {
+  // ===============================
+  // SUBMIT ANSWER
+  // GEMINI AI EVALUATION
+  // ===============================
+
+  const handleSubmitAnswer = async () => {
+    if (!answer.trim() || evaluating) {
       return;
     }
 
-    const score = Math.floor(Math.random() * 21) + 75;
-
-    const currentAnswer = {
-      questionId: currentQuestionData.id,
-      question: currentQuestionData.question,
-      answer: answer.trim(),
-      score,
-    };
-
-    setAnswers((previousAnswers) => [
-      ...previousAnswers,
-      currentAnswer,
-    ]);
-
-    setShowFeedback(true);
-  };
-
-  const handleNextQuestion = async () => {
-  // Make sure the current answer is included
-  const latestAnswer = {
-    questionId: currentQuestionData.id,
-    question: currentQuestionData.question,
-    answer: answer.trim(),
-    score:
-      answers.length > 0
-        ? answers[answers.length - 1].score
-        : 0,
-    feedback:
-      "Your answer demonstrates a good understanding of the main concept. " +
-      "Try adding more practical examples to improve clarity.",
-  };
-
-  const updatedAnswers =
-    answers.some(
-      (item) => item.questionId === currentQuestionData.id
-    )
-      ? answers
-      : [...answers, latestAnswer];
-
-  // ===============================
-  // FINAL QUESTION
-  // ===============================
-
-  if (currentQuestion >= questions.length - 1) {
     try {
-      setSaving(true);
+      setEvaluating(true);
+      setEvaluationError("");
 
-      // Calculate final interview score
-      const totalScore = updatedAnswers.reduce(
-        (total, item) => total + item.score,
-        0
-      );
-
-      const finalScore = Math.round(
-        totalScore / updatedAnswers.length
-      );
-
-      // Get JWT token
       const token = localStorage.getItem("token");
 
-      // ===============================
-      // 1. SAVE INTERVIEW
-      // ===============================
+      if (!token) {
+        throw new Error(
+          "You are not authenticated. Please login again."
+        );
+      }
 
-      const interviewResponse = await fetch(
-        "http://localhost:5000/api/interviews",
+      // Send answer to backend
+      const response = await fetch(
+        "http://localhost:5000/api/interviews/evaluate",
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+
           body: JSON.stringify({
+            question: currentQuestionData.question,
+            answer: answer.trim(),
             jobRole,
             difficulty,
-            questionCount: questions.length,
-            score: finalScore,
-            status: "Completed",
           }),
         }
       );
 
-      const interviewData =
-        await interviewResponse.json();
+      const data = await response.json();
 
-      if (!interviewResponse.ok) {
+      if (!response.ok) {
         throw new Error(
-          interviewData.message ||
-            "Failed to save interview"
+          data.message ||
+            "Failed to evaluate answer"
         );
       }
 
-      // Get newly created interview ID
-      const interviewId =
-        interviewData.interview.id;
+      // AI evaluation
+      const evaluation = data.evaluation;
 
-      // ===============================
-      // 2. SAVE ALL ANSWERS
-      // ===============================
+      if (!evaluation) {
+        throw new Error(
+          "AI evaluation data was not returned."
+        );
+      }
 
-      await Promise.all(
-        updatedAnswers.map(async (item) => {
-          const answerResponse = await fetch(
-            `http://localhost:5000/api/interviews/${interviewId}/answers`,
+      // Store current AI evaluation
+      setCurrentEvaluation(evaluation);
+
+      // Create answer object
+      const currentAnswer = {
+        questionId: currentQuestionData.id,
+
+        question: currentQuestionData.question,
+
+        answer: answer.trim(),
+
+        score: evaluation.score,
+
+        feedback: evaluation.feedback,
+
+        strength: evaluation.strength,
+
+        improvement: evaluation.improvement,
+      };
+
+      // Save answer in React state
+      setAnswers((previousAnswers) => [
+        ...previousAnswers,
+        currentAnswer,
+      ]);
+
+      // Show AI feedback
+      setShowFeedback(true);
+
+    } catch (error) {
+      console.error(
+        "AI evaluation error:",
+        error
+      );
+
+      setEvaluationError(
+        error.message ||
+          "Failed to evaluate your answer."
+      );
+
+    } finally {
+      setEvaluating(false);
+    }
+  };
+
+  // ===============================
+  // NEXT QUESTION / COMPLETE
+  // ===============================
+
+  const handleNextQuestion = async () => {
+    // Make sure current evaluation exists
+    if (!currentEvaluation) {
+      return;
+    }
+
+    // Current answer is already stored in answers
+    const updatedAnswers = answers;
+
+    // ===============================
+    // FINAL QUESTION
+    // ===============================
+
+    if (
+      currentQuestion >=
+      questions.length - 1
+    ) {
+      try {
+        setSaving(true);
+
+        const token =
+          localStorage.getItem("token");
+
+        if (!token) {
+          throw new Error(
+            "You are not authenticated."
+          );
+        }
+
+        // ===============================
+        // CALCULATE FINAL SCORE
+        // ===============================
+
+        const totalScore =
+          updatedAnswers.reduce(
+            (total, item) =>
+              total + Number(item.score || 0),
+            0
+          );
+
+        const finalScore =
+          updatedAnswers.length > 0
+            ? Math.round(
+                totalScore /
+                  updatedAnswers.length
+              )
+            : 0;
+
+        // ===============================
+        // SAVE INTERVIEW
+        // ===============================
+
+        const interviewResponse =
+          await fetch(
+            "http://localhost:5000/api/interviews",
             {
               method: "POST",
+
               headers: {
-                "Content-Type": "application/json",
+                "Content-Type":
+                  "application/json",
+
                 Authorization: `Bearer ${token}`,
               },
+
               body: JSON.stringify({
-                question: item.question,
-                answer: item.answer,
-                score: item.score,
-                feedback: item.feedback,
+                jobRole,
+                difficulty,
+                questionCount:
+                  questions.length,
+                score: finalScore,
+                status: "Completed",
               }),
             }
           );
 
-          const answerData =
-            await answerResponse.json();
+        const interviewData =
+          await interviewResponse.json();
 
-          if (!answerResponse.ok) {
-            throw new Error(
-              answerData.message ||
-                "Failed to save interview answer"
-            );
+        if (!interviewResponse.ok) {
+          throw new Error(
+            interviewData.message ||
+              "Failed to save interview"
+          );
+        }
+
+        // ===============================
+        // INTERVIEW ID
+        // ===============================
+
+        const interviewId =
+          interviewData.interview.id;
+
+        // ===============================
+        // SAVE ALL ANSWERS
+        // ===============================
+
+        await Promise.all(
+          updatedAnswers.map(
+            async (item) => {
+              const answerResponse =
+                await fetch(
+                  `http://localhost:5000/api/interviews/${interviewId}/answers`,
+                  {
+                    method: "POST",
+
+                    headers: {
+                      "Content-Type":
+                        "application/json",
+
+                      Authorization:
+                        `Bearer ${token}`,
+                    },
+
+                    body: JSON.stringify({
+                      question:
+                        item.question,
+
+                      answer:
+                        item.answer,
+
+                      score:
+                        item.score,
+
+                      feedback:
+                        item.feedback,
+                    }),
+                  }
+                );
+
+              const answerData =
+                await answerResponse.json();
+
+              if (!answerResponse.ok) {
+                throw new Error(
+                  answerData.message ||
+                    "Failed to save interview answer"
+                );
+              }
+
+              return answerData;
+            }
+          )
+        );
+
+        // ===============================
+        // RESULT PAGE
+        // ===============================
+
+        navigate(
+          "/interview-result",
+          {
+            state: {
+              jobRole,
+
+              difficulty,
+
+              questionCount:
+                questions.length,
+
+              answers:
+                updatedAnswers,
+
+              finalScore,
+
+              interviewId,
+            },
           }
+        );
 
-          return answerData;
-        })
-      );
+      } catch (error) {
+        console.error(
+          "Interview save error:",
+          error
+        );
 
-      // ===============================
-      // 3. GO TO RESULT PAGE
-      // ===============================
+        alert(
+          "Interview completed, but failed to save your result."
+        );
 
-      navigate("/interview-result", {
-        state: {
-          jobRole,
-          difficulty,
-          questionCount: questions.length,
-          answers: updatedAnswers,
-          finalScore,
-          interviewId,
-        },
-      });
+      } finally {
+        setSaving(false);
+      }
 
-    } catch (error) {
-      console.error(
-        "Interview save error:",
-        error
-      );
-
-      alert(
-        "Interview completed, but failed to save your result."
-      );
-
-    } finally {
-      setSaving(false);
+      return;
     }
 
-    return;
-  }
+    // ===============================
+    // NEXT QUESTION
+    // ===============================
+
+    setCurrentQuestion(
+      (previousQuestion) =>
+        previousQuestion + 1
+    );
+
+    setAnswer("");
+
+    setShowFeedback(false);
+
+    setCurrentEvaluation(null);
+
+    setEvaluationError("");
+
+    setTimeLeft(120);
+  };
 
   // ===============================
-  // NEXT QUESTION
+  // EXIT INTERVIEW
   // ===============================
 
-  setCurrentQuestion(
-    (previousQuestion) =>
-      previousQuestion + 1
-  );
-
-  setAnswer("");
-  setShowFeedback(false);
-  setTimeLeft(120);
-};
-
-
-
-  // Exit interview
   const handleExit = () => {
     navigate("/dashboard");
   };
+
+  // ===============================
+  // UI
+  // ===============================
 
   return (
     <div className="mock-interview-page">
@@ -320,12 +486,20 @@ function MockInterview() {
             className="interview-back"
           >
             <ArrowLeft size={17} />
-            <span>Exit Interview</span>
+
+            <span>
+              Exit Interview
+            </span>
           </Link>
 
           <div className="interview-brand">
+
             <Brain size={24} />
-            <span>CareerAI</span>
+
+            <span>
+              CareerAI
+            </span>
+
           </div>
 
         </div>
@@ -333,8 +507,13 @@ function MockInterview() {
         <div className="interview-header-info">
 
           <div className="role-label">
+
             <BriefcaseBusiness size={15} />
-            <span>{jobRole}</span>
+
+            <span>
+              {jobRole}
+            </span>
+
           </div>
 
           <span className="difficulty-label">
@@ -362,8 +541,10 @@ function MockInterview() {
 
             <h1>
               Question {currentQuestion + 1}
+
               <span>
-                {" "}of {questions.length}
+                {" "}
+                of {questions.length}
               </span>
             </h1>
 
@@ -371,14 +552,18 @@ function MockInterview() {
 
           <div
             className={`timer ${
-              timeLeft <= 30 ? "timer-warning" : ""
+              timeLeft <= 30
+                ? "timer-warning"
+                : ""
             }`}
           >
+
             <Clock3 size={17} />
 
             <span>
               {formatTime()}
             </span>
+
           </div>
 
         </section>
@@ -393,7 +578,10 @@ function MockInterview() {
             <div
               className="progress-fill"
               style={{
-                width: `${Math.min(progress, 100)}%`,
+                width: `${Math.min(
+                  progress,
+                  100
+                )}%`,
               }}
             />
 
@@ -461,11 +649,31 @@ function MockInterview() {
                 id="answer"
                 value={answer}
                 onChange={(event) =>
-                  setAnswer(event.target.value)
+                  setAnswer(
+                    event.target.value
+                  )
                 }
                 placeholder="Type your answer here. Explain your answer clearly and provide examples where appropriate..."
                 rows="9"
+                disabled={evaluating}
               />
+
+
+              {/* Error */}
+
+              {evaluationError && (
+
+                <div
+                  style={{
+                    marginTop: "12px",
+                    color: "#dc2626",
+                    fontSize: "14px",
+                  }}
+                >
+                  {evaluationError}
+                </div>
+
+              )}
 
 
               <div className="answer-footer">
@@ -477,11 +685,21 @@ function MockInterview() {
                 <button
                   type="button"
                   className="submit-answer-btn"
-                  onClick={handleSubmitAnswer}
-                  disabled={!answer.trim()}
+                  onClick={
+                    handleSubmitAnswer
+                  }
+                  disabled={
+                    !answer.trim() ||
+                    evaluating
+                  }
                 >
+
                   <Send size={16} />
-                  Submit Answer
+
+                  {evaluating
+                    ? "Evaluating..."
+                    : "Submit Answer"}
+
                 </button>
 
               </div>
@@ -490,7 +708,7 @@ function MockInterview() {
 
           ) : (
 
-            /* ================= FEEDBACK ================= */
+            /* ================= AI FEEDBACK ================= */
 
             <div className="feedback-section">
 
@@ -499,7 +717,11 @@ function MockInterview() {
               <div className="feedback-success">
 
                 <div className="feedback-success-icon">
-                  <CheckCircle2 size={22} />
+
+                  <CheckCircle2
+                    size={22}
+                  />
+
                 </div>
 
                 <div>
@@ -509,7 +731,8 @@ function MockInterview() {
                   </h3>
 
                   <p>
-                    Here is your AI-generated feedback.
+                    Here is your AI-generated
+                    feedback.
                   </p>
 
                 </div>
@@ -517,7 +740,7 @@ function MockInterview() {
               </div>
 
 
-              {/* Score */}
+              {/* ================= SCORE ================= */}
 
               <div className="feedback-score">
 
@@ -528,20 +751,28 @@ function MockInterview() {
                   </span>
 
                   <strong>
+
                     {
-                      answers[answers.length - 1]?.score || 0
+                      currentEvaluation?.score ??
+                      0
                     }
-                    <small>/100</small>
+
+                    <small>
+                      /100
+                    </small>
+
                   </strong>
 
                 </div>
 
-                <BarChart3 size={36} />
+                <BarChart3
+                  size={36}
+                />
 
               </div>
 
 
-              {/* Strength / Improvement */}
+              {/* ================= STRENGTH / IMPROVEMENT ================= */}
 
               <div className="feedback-grid">
 
@@ -552,12 +783,13 @@ function MockInterview() {
                   </span>
 
                   <h4>
-                    Good Understanding
+                    {currentEvaluation?.strength ||
+                      "Good understanding"}
                   </h4>
 
                   <p>
-                    Your answer demonstrates a good
-                    understanding of the main concept.
+                    {currentEvaluation?.feedback ||
+                      "Your answer was evaluated by AI."}
                   </p>
 
                 </div>
@@ -570,12 +802,12 @@ function MockInterview() {
                   </span>
 
                   <h4>
-                    Add More Examples
+                    Focus on improvement
                   </h4>
 
                   <p>
-                    Try adding a practical example to
-                    make your explanation clearer.
+                    {currentEvaluation?.improvement ||
+                      "Try to provide more detail."}
                   </p>
 
                 </div>
@@ -583,25 +815,27 @@ function MockInterview() {
               </div>
 
 
-              {/* Suggested Improvement */}
+              {/* ================= AI FEEDBACK ================= */}
 
               <div className="suggestion-box">
 
                 <div className="suggestion-icon">
-                  <Lightbulb size={18} />
+
+                  <Lightbulb
+                    size={18}
+                  />
+
                 </div>
 
                 <div>
 
                   <h4>
-                    Suggested Improvement
+                    AI Feedback
                   </h4>
 
                   <p>
-                    Structure your answer clearly by
-                    first explaining the concept and
-                    then providing a practical
-                    real-world example.
+                    {currentEvaluation?.feedback ||
+                      "No feedback available."}
                   </p>
 
                 </div>
@@ -609,27 +843,41 @@ function MockInterview() {
               </div>
 
 
-              {/* Next Button */}
+              {/* ================= NEXT BUTTON ================= */}
 
               <button
                 type="button"
                 className="next-question-btn"
-                onClick={handleNextQuestion}
+                onClick={
+                  handleNextQuestion
+                }
                 disabled={saving}
               >
 
                 <span>
+
                   {saving
                     ? "Saving Interview..."
-                    : currentQuestion === questions.length - 1
+                    : currentQuestion ===
+                      questions.length - 1
                     ? "Complete Interview"
                     : "Next Question"}
+
                 </span>
 
-                {currentQuestion === questions.length - 1 ? (
-                  <CheckCircle2 size={17} />
+                {currentQuestion ===
+                questions.length - 1 ? (
+
+                  <CheckCircle2
+                    size={17}
+                  />
+
                 ) : (
-                  <ArrowRight size={17} />
+
+                  <ArrowRight
+                    size={17}
+                  />
+
                 )}
 
               </button>
@@ -648,7 +896,11 @@ function MockInterview() {
           <div className="interview-tip">
 
             <div className="tip-icon">
-              <Lightbulb size={17} />
+
+              <Lightbulb
+                size={17}
+              />
+
             </div>
 
             <div>
@@ -658,9 +910,10 @@ function MockInterview() {
               </strong>
 
               <p>
-                Structure your answer clearly and explain
-                your reasoning. Use practical examples
-                whenever possible.
+                Structure your answer clearly
+                and explain your reasoning.
+                Use practical examples whenever
+                possible.
               </p>
 
             </div>
@@ -675,12 +928,16 @@ function MockInterview() {
         <div className="interview-bottom-info">
 
           <span>
+
             <Brain size={14} />
+
             AI-powered interview evaluation
+
           </span>
 
           <span>
-            Your answers are evaluated after submission
+            Your answers are evaluated after
+            submission
           </span>
 
         </div>
