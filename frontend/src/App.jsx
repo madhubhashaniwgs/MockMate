@@ -8,6 +8,7 @@ import InterviewSetup from "./pages/InterviewSetup";
 import InterviewResult from "./pages/InterviewResult";
 import InterviewHistory from "./pages/InterviewHistory";
 import MockInterview from "./pages/MockInterview";
+import Performance from "./pages/Performance";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -52,6 +53,11 @@ function App() {
           <Route
             path="/mock-interview"
             element={<MockInterview />}
+          />
+
+          <Route
+            path="/performance"
+            element={<Performance />}
           />
 
         </Route>

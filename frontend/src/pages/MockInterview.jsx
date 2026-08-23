@@ -19,56 +19,21 @@ function MockInterview() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // ===============================
-  // INTERVIEW SETUP DATA
-  // ===============================
+  // ==========================================
+  // INTERVIEW DATA
+  // ==========================================
 
-  const {
-    jobRole = "Frontend Developer",
-    difficulty = "Medium",
-    questionCount = 5,
-  } = location.state || {};
+  const interviewData = location.state;
 
-  // ===============================
-  // INTERVIEW QUESTIONS
-  // ===============================
+  const jobRole = interviewData?.jobRole || "";
+  const difficulty = interviewData?.difficulty || "";
+  const questions = Array.isArray(interviewData?.questions)
+    ? interviewData.questions
+    : [];
 
-  const interviewQuestions = [
-    {
-      id: 1,
-      question:
-        "Can you explain the difference between var, let, and const in JavaScript?",
-    },
-    {
-      id: 2,
-      question:
-        "What is the difference between React props and state?",
-    },
-    {
-      id: 3,
-      question:
-        "What is the Virtual DOM and why is it useful in React?",
-    },
-    {
-      id: 4,
-      question:
-        "What is the difference between useEffect and useState in React?",
-    },
-    {
-      id: 5,
-      question:
-        "How would you improve the performance of a React application?",
-    },
-  ];
-
-  const questions = interviewQuestions.slice(
-    0,
-    Math.min(Number(questionCount), interviewQuestions.length)
-  );
-
-  // ===============================
+  // ==========================================
   // STATES
-  // ===============================
+  // ==========================================
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
 
@@ -89,19 +54,25 @@ function MockInterview() {
   const [currentEvaluation, setCurrentEvaluation] =
     useState(null);
 
+  // ==========================================
+  // CURRENT QUESTION
+  // ==========================================
+
   const currentQuestionData =
     questions[currentQuestion];
 
-  // ===============================
+  // ==========================================
   // PROGRESS
-  // ===============================
+  // ==========================================
 
   const progress =
-    ((currentQuestion + 1) / questions.length) * 100;
+    questions.length > 0
+      ? ((currentQuestion + 1) / questions.length) * 100
+      : 0;
 
-  // ===============================
-  // TIMER
-  // ===============================
+  // ==========================================
+  // FORMAT TIMER
+  // ==========================================
 
   const formatTime = () => {
     const minutes = Math.floor(timeLeft / 60);
@@ -113,16 +84,26 @@ function MockInterview() {
       .padStart(2, "0")}`;
   };
 
-  // Reset timer for every question
+  // ==========================================
+  // RESET TIMER WHEN QUESTION CHANGES
+  // ==========================================
 
   useEffect(() => {
     setTimeLeft(120);
   }, [currentQuestion]);
 
-  // Countdown timer
+  // ==========================================
+  // COUNTDOWN TIMER
+  // ==========================================
 
   useEffect(() => {
-    if (showFeedback || evaluating) {
+    if (
+      !interviewData ||
+      questions.length === 0 ||
+      showFeedback ||
+      evaluating ||
+      saving
+    ) {
       return;
     }
 
@@ -133,7 +114,6 @@ function MockInterview() {
     const timer = setInterval(() => {
       setTimeLeft((previousTime) => {
         if (previousTime <= 1) {
-          clearInterval(timer);
           return 0;
         }
 
@@ -141,16 +121,31 @@ function MockInterview() {
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [timeLeft, showFeedback, evaluating]);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [
+    interviewData,
+    questions.length,
+    showFeedback,
+    evaluating,
+    saving,
+    timeLeft,
+  ]);
 
-  // ===============================
+  // ==========================================
   // SUBMIT ANSWER
   // GEMINI AI EVALUATION
-  // ===============================
+  // ==========================================
 
   const handleSubmitAnswer = async () => {
-    if (!answer.trim() || evaluating) {
+    if (
+      !answer.trim() ||
+      evaluating ||
+      saving ||
+      timeLeft <= 0 ||
+      !currentQuestionData
+    ) {
       return;
     }
 
@@ -166,7 +161,10 @@ function MockInterview() {
         );
       }
 
-      // Send answer to backend
+      // ========================================
+      // SEND ANSWER TO BACKEND
+      // ========================================
+
       const response = await fetch(
         "http://localhost:5000/api/interviews/evaluate",
         {
@@ -186,16 +184,23 @@ function MockInterview() {
         }
       );
 
+      // ========================================
+      // READ RESPONSE
+      // ========================================
+
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
           data.message ||
-            "Failed to evaluate answer"
+            "Failed to evaluate your answer."
         );
       }
 
-      // AI evaluation
+      // ========================================
+      // GET AI EVALUATION
+      // ========================================
+
       const evaluation = data.evaluation;
 
       if (!evaluation) {
@@ -204,33 +209,107 @@ function MockInterview() {
         );
       }
 
-      // Store current AI evaluation
-      setCurrentEvaluation(evaluation);
+      // ========================================
+      // NORMALIZE SCORE
+      // ========================================
 
-      // Create answer object
-      const currentAnswer = {
-        questionId: currentQuestionData.id,
+      const parsedScore = Number(
+        evaluation.score
+      );
 
-        question: currentQuestionData.question,
+      const normalizedScore = Math.max(
+        0,
+        Math.min(
+          100,
+          Number.isFinite(parsedScore)
+            ? Math.round(parsedScore)
+            : 0
+        )
+      );
 
-        answer: answer.trim(),
+      // ========================================
+      // NORMALIZE AI RESPONSE
+      // ========================================
 
-        score: evaluation.score,
+      const normalizedEvaluation = {
+        score: normalizedScore,
 
-        feedback: evaluation.feedback,
+        feedback:
+          evaluation.feedback ||
+          "No detailed feedback was provided.",
 
-        strength: evaluation.strength,
+        strength:
+          evaluation.strength ||
+          "No specific strength was identified.",
 
-        improvement: evaluation.improvement,
+        improvement:
+          evaluation.improvement ||
+          "Continue practicing and improving your answer.",
       };
 
-      // Save answer in React state
-      setAnswers((previousAnswers) => [
-        ...previousAnswers,
-        currentAnswer,
-      ]);
+      // ========================================
+      // STORE CURRENT EVALUATION
+      // ========================================
 
-      // Show AI feedback
+      setCurrentEvaluation(
+        normalizedEvaluation
+      );
+
+      // ========================================
+      // CREATE ANSWER OBJECT
+      // ========================================
+
+      const currentAnswer = {
+        questionId:
+          currentQuestionData.id ||
+          currentQuestion + 1,
+
+        question:
+          currentQuestionData.question,
+
+        answer:
+          answer.trim(),
+
+        score:
+          normalizedEvaluation.score,
+
+        feedback:
+          normalizedEvaluation.feedback,
+
+        strength:
+          normalizedEvaluation.strength,
+
+        improvement:
+          normalizedEvaluation.improvement,
+      };
+
+      // ========================================
+      // SAVE ANSWER IN STATE
+      // PREVENT DUPLICATES
+      // ========================================
+
+      setAnswers((previousAnswers) => {
+        const filteredAnswers =
+          previousAnswers.filter(
+            (item) =>
+              item.questionId !==
+              currentAnswer.questionId
+          );
+
+        return [
+          ...filteredAnswers,
+          currentAnswer,
+        ].sort(
+          (a, b) =>
+            Number(a.questionId) -
+            Number(b.questionId)
+        );
+      });
+
+      // ========================================
+      // SHOW FEEDBACK
+      // ========================================
+
       setShowFeedback(true);
 
     } catch (error) {
@@ -249,47 +328,71 @@ function MockInterview() {
     }
   };
 
-  // ===============================
-  // NEXT QUESTION / COMPLETE
-  // ===============================
+  // ==========================================
+  // NEXT QUESTION / COMPLETE INTERVIEW
+  // ==========================================
 
   const handleNextQuestion = async () => {
-    // Make sure current evaluation exists
-    if (!currentEvaluation) {
+    if (
+      !currentEvaluation ||
+      saving
+    ) {
       return;
     }
 
-    // Current answer is already stored in answers
-    const updatedAnswers = answers;
-
-    // ===============================
+    // ========================================
     // FINAL QUESTION
-    // ===============================
+    // ========================================
 
     if (
-      currentQuestion >=
+      currentQuestion ===
       questions.length - 1
     ) {
       try {
         setSaving(true);
+
+        setEvaluationError("");
 
         const token =
           localStorage.getItem("token");
 
         if (!token) {
           throw new Error(
-            "You are not authenticated."
+            "You are not authenticated. Please login again."
           );
         }
 
-        // ===============================
+        // ======================================
+        // GET LATEST ANSWERS
+        // ======================================
+
+        const updatedAnswers = [...answers];
+
+        // ======================================
+        // CHECK ANSWERS
+        // ======================================
+
+        if (
+          updatedAnswers.length !==
+          questions.length
+        ) {
+          throw new Error(
+            "Some interview answers are missing. Please make sure every question has been answered."
+          );
+        }
+
+        // ======================================
         // CALCULATE FINAL SCORE
-        // ===============================
+        // ======================================
 
         const totalScore =
           updatedAnswers.reduce(
-            (total, item) =>
-              total + Number(item.score || 0),
+            (total, item) => {
+              return (
+                total +
+                Number(item.score || 0)
+              );
+            },
             0
           );
 
@@ -301,9 +404,9 @@ function MockInterview() {
               )
             : 0;
 
-        // ===============================
+        // ======================================
         // SAVE INTERVIEW
-        // ===============================
+        // ======================================
 
         const interviewResponse =
           await fetch(
@@ -315,92 +418,105 @@ function MockInterview() {
                 "Content-Type":
                   "application/json",
 
-                Authorization: `Bearer ${token}`,
+                Authorization:
+                  `Bearer ${token}`,
               },
 
               body: JSON.stringify({
                 jobRole,
+
                 difficulty,
+
                 questionCount:
                   questions.length,
-                score: finalScore,
-                status: "Completed",
+
+                score:
+                  finalScore,
+
+                status:
+                  "Completed",
               }),
             }
           );
 
-        const interviewData =
+        const savedInterview =
           await interviewResponse.json();
 
         if (!interviewResponse.ok) {
           throw new Error(
-            interviewData.message ||
-              "Failed to save interview"
+            savedInterview.message ||
+              "Failed to save interview."
           );
         }
 
-        // ===============================
-        // INTERVIEW ID
-        // ===============================
+        // ======================================
+        // GET INTERVIEW ID
+        // ======================================
 
         const interviewId =
-          interviewData.interview.id;
+          savedInterview?.interview?.id;
 
-        // ===============================
+        if (!interviewId) {
+          throw new Error(
+            "Interview ID was not returned by the server."
+          );
+        }
+
+        // ======================================
         // SAVE ALL ANSWERS
-        // ===============================
+        // ======================================
 
-        await Promise.all(
-          updatedAnswers.map(
-            async (item) => {
-              const answerResponse =
-                await fetch(
-                  `http://localhost:5000/api/interviews/${interviewId}/answers`,
-                  {
-                    method: "POST",
+        for (const item of updatedAnswers) {
+          const answerResponse =
+            await fetch(
+              `http://localhost:5000/api/interviews/${interviewId}/answers`,
+              {
+                method: "POST",
 
-                    headers: {
-                      "Content-Type":
-                        "application/json",
+                headers: {
+                  "Content-Type":
+                    "application/json",
 
-                      Authorization:
-                        `Bearer ${token}`,
-                    },
+                  Authorization:
+                    `Bearer ${token}`,
+                },
 
-                    body: JSON.stringify({
-                      question:
-                        item.question,
+                body: JSON.stringify({
+                  question:
+                    item.question,
 
-                      answer:
-                        item.answer,
+                  answer:
+                    item.answer,
 
-                      score:
-                        item.score,
+                  score:
+                    item.score,
 
-                      feedback:
-                        item.feedback,
-                    }),
-                  }
-                );
+                  feedback:
+                    item.feedback,
 
-              const answerData =
-                await answerResponse.json();
+                  strength:
+                    item.strength,
 
-              if (!answerResponse.ok) {
-                throw new Error(
-                  answerData.message ||
-                    "Failed to save interview answer"
-                );
+                  improvement:
+                    item.improvement,
+                }),
               }
+            );
 
-              return answerData;
-            }
-          )
-        );
+          const answerData =
+            await answerResponse.json();
 
-        // ===============================
-        // RESULT PAGE
-        // ===============================
+          if (!answerResponse.ok) {
+            throw new Error(
+              answerData.message ||
+                "Failed to save an interview answer."
+            );
+          }
+        }
+
+        // ======================================
+        // GO TO RESULT PAGE
+        // ======================================
 
         navigate(
           "/interview-result",
@@ -429,8 +545,14 @@ function MockInterview() {
           error
         );
 
+        setEvaluationError(
+          error.message ||
+            "Interview completed, but failed to save your result."
+        );
+
         alert(
-          "Interview completed, but failed to save your result."
+          error.message ||
+            "Interview completed, but failed to save your result."
         );
 
       } finally {
@@ -440,9 +562,9 @@ function MockInterview() {
       return;
     }
 
-    // ===============================
-    // NEXT QUESTION
-    // ===============================
+    // ========================================
+    // MOVE TO NEXT QUESTION
+    // ========================================
 
     setCurrentQuestion(
       (previousQuestion) =>
@@ -460,47 +582,121 @@ function MockInterview() {
     setTimeLeft(120);
   };
 
-  // ===============================
+  // ==========================================
   // EXIT INTERVIEW
-  // ===============================
+  // ==========================================
 
   const handleExit = () => {
-    navigate("/dashboard");
+    const confirmExit =
+      window.confirm(
+        "Are you sure you want to exit? Your current interview progress will be lost."
+      );
+
+    if (confirmExit) {
+      navigate("/dashboard");
+    }
   };
 
-  // ===============================
+  // ==========================================
+  // NO INTERVIEW SESSION
+  // ==========================================
+
+  if (!interviewData) {
+    return (
+      <div className="mock-interview-page">
+        <div className="interview-error">
+          <h2>
+            Interview session not found
+          </h2>
+
+          <p>
+            Please start a new interview.
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                "/interview-setup"
+              )
+            }
+          >
+            Start New Interview
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // NO QUESTIONS
+  // ==========================================
+
+  if (questions.length === 0) {
+    return (
+      <div className="mock-interview-page">
+        <div className="interview-error">
+          <h2>
+            No interview questions found
+          </h2>
+
+          <p>
+            Please generate a new interview.
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                "/interview-setup"
+              )
+            }
+          >
+            Generate Questions
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
   // UI
-  // ===============================
+  // ==========================================
 
   return (
     <div className="mock-interview-page">
 
-      {/* ================= HEADER ================= */}
+      {/* ======================================
+          HEADER
+      ====================================== */}
 
       <header className="interview-header">
 
         <div className="interview-header-left">
 
-          <Link
-            to="/dashboard"
+          <button
+            type="button"
             className="interview-back"
+            onClick={handleExit}
+            disabled={saving}
           >
             <ArrowLeft size={17} />
 
             <span>
               Exit Interview
             </span>
-          </Link>
+          </button>
 
-          <div className="interview-brand">
-
+          <Link
+            to="/dashboard"
+            className="interview-brand"
+          >
             <Brain size={24} />
 
             <span>
               CareerAI
             </span>
-
-          </div>
+          </Link>
 
         </div>
 
@@ -508,7 +704,9 @@ function MockInterview() {
 
           <div className="role-label">
 
-            <BriefcaseBusiness size={15} />
+            <BriefcaseBusiness
+              size={15}
+            />
 
             <span>
               {jobRole}
@@ -525,11 +723,15 @@ function MockInterview() {
       </header>
 
 
-      {/* ================= MAIN ================= */}
+      {/* ======================================
+          MAIN
+      ====================================== */}
 
       <main className="interview-container">
 
-        {/* Top Information */}
+        {/* ====================================
+            TOP INFORMATION
+        ==================================== */}
 
         <section className="interview-top">
 
@@ -540,7 +742,8 @@ function MockInterview() {
             </span>
 
             <h1>
-              Question {currentQuestion + 1}
+              Question{" "}
+              {currentQuestion + 1}
 
               <span>
                 {" "}
@@ -569,7 +772,9 @@ function MockInterview() {
         </section>
 
 
-        {/* Progress */}
+        {/* ====================================
+            PROGRESS
+        ==================================== */}
 
         <section className="progress-section">
 
@@ -588,17 +793,21 @@ function MockInterview() {
           </div>
 
           <span>
-            {Math.round(progress)}% Complete
+            {Math.round(progress)}%
+            {" "}
+            Complete
           </span>
 
         </section>
 
 
-        {/* ================= QUESTION CARD ================= */}
+        {/* ====================================
+            QUESTION CARD
+        ==================================== */}
 
         <section className="question-card">
 
-          {/* Question Header */}
+          {/* QUESTION HEADER */}
 
           <div className="question-card-header">
 
@@ -619,14 +828,16 @@ function MockInterview() {
           </div>
 
 
-          {/* Question */}
+          {/* QUESTION */}
 
           <h2 className="question-text">
-            {currentQuestionData.question}
+            {currentQuestionData?.question}
           </h2>
 
 
-          {/* ================= ANSWER ================= */}
+          {/* ==================================
+              ANSWER SECTION
+          ================================== */}
 
           {!showFeedback ? (
 
@@ -655,19 +866,52 @@ function MockInterview() {
                 }
                 placeholder="Type your answer here. Explain your answer clearly and provide examples where appropriate..."
                 rows="9"
-                disabled={evaluating}
+                disabled={
+                  evaluating ||
+                  saving ||
+                  timeLeft <= 0
+                }
               />
 
 
-              {/* Error */}
+              {/* TIMER FINISHED */}
+
+              {timeLeft <= 0 && (
+
+                <div
+                  style={{
+                    marginTop:
+                      "12px",
+
+                    color:
+                      "#dc2626",
+
+                    fontSize:
+                      "14px",
+                  }}
+                >
+                  Time is up for this
+                  question. Please move
+                  to the next question.
+                </div>
+
+              )}
+
+
+              {/* EVALUATION ERROR */}
 
               {evaluationError && (
 
                 <div
                   style={{
-                    marginTop: "12px",
-                    color: "#dc2626",
-                    fontSize: "14px",
+                    marginTop:
+                      "12px",
+
+                    color:
+                      "#dc2626",
+
+                    fontSize:
+                      "14px",
                   }}
                 >
                   {evaluationError}
@@ -676,10 +920,14 @@ function MockInterview() {
               )}
 
 
+              {/* ANSWER FOOTER */}
+
               <div className="answer-footer">
 
                 <span>
-                  {answer.length} characters
+                  {answer.length}
+                  {" "}
+                  characters
                 </span>
 
                 <button
@@ -690,7 +938,9 @@ function MockInterview() {
                   }
                   disabled={
                     !answer.trim() ||
-                    evaluating
+                    evaluating ||
+                    saving ||
+                    timeLeft <= 0
                   }
                 >
 
@@ -708,11 +958,13 @@ function MockInterview() {
 
           ) : (
 
-            /* ================= AI FEEDBACK ================= */
+            /* =================================
+               AI FEEDBACK
+            ================================= */
 
             <div className="feedback-section">
 
-              {/* Feedback Header */}
+              {/* FEEDBACK HEADER */}
 
               <div className="feedback-success">
 
@@ -731,7 +983,9 @@ function MockInterview() {
                   </h3>
 
                   <p>
-                    Here is your AI-generated
+                    Here is your
+                    {" "}
+                    AI-generated
                     feedback.
                   </p>
 
@@ -740,7 +994,7 @@ function MockInterview() {
               </div>
 
 
-              {/* ================= SCORE ================= */}
+              {/* SCORE */}
 
               <div className="feedback-score">
 
@@ -752,10 +1006,8 @@ function MockInterview() {
 
                   <strong>
 
-                    {
-                      currentEvaluation?.score ??
-                      0
-                    }
+                    {currentEvaluation?.score ??
+                      0}
 
                     <small>
                       /100
@@ -772,9 +1024,11 @@ function MockInterview() {
               </div>
 
 
-              {/* ================= STRENGTH / IMPROVEMENT ================= */}
+              {/* STRENGTH + IMPROVEMENT */}
 
               <div className="feedback-grid">
+
+                {/* STRENGTH */}
 
                 <div className="feedback-box strength">
 
@@ -784,16 +1038,18 @@ function MockInterview() {
 
                   <h4>
                     {currentEvaluation?.strength ||
-                      "Good understanding"}
+                      "No specific strength identified."}
                   </h4>
 
                   <p>
                     {currentEvaluation?.feedback ||
-                      "Your answer was evaluated by AI."}
+                      "No detailed feedback available."}
                   </p>
 
                 </div>
 
+
+                {/* IMPROVEMENT */}
 
                 <div className="feedback-box improvement">
 
@@ -802,12 +1058,12 @@ function MockInterview() {
                   </span>
 
                   <h4>
-                    Focus on improvement
+                    Areas to Improve
                   </h4>
 
                   <p>
                     {currentEvaluation?.improvement ||
-                      "Try to provide more detail."}
+                      "Continue practicing to improve your performance."}
                   </p>
 
                 </div>
@@ -815,7 +1071,7 @@ function MockInterview() {
               </div>
 
 
-              {/* ================= AI FEEDBACK ================= */}
+              {/* AI FEEDBACK */}
 
               <div className="suggestion-box">
 
@@ -835,7 +1091,7 @@ function MockInterview() {
 
                   <p>
                     {currentEvaluation?.feedback ||
-                      "No feedback available."}
+                      "No additional feedback available."}
                   </p>
 
                 </div>
@@ -843,7 +1099,7 @@ function MockInterview() {
               </div>
 
 
-              {/* ================= NEXT BUTTON ================= */}
+              {/* NEXT / COMPLETE BUTTON */}
 
               <button
                 type="button"
@@ -889,7 +1145,9 @@ function MockInterview() {
         </section>
 
 
-        {/* ================= INTERVIEW TIP ================= */}
+        {/* ====================================
+            INTERVIEW TIP
+        ==================================== */}
 
         {!showFeedback && (
 
@@ -910,10 +1168,10 @@ function MockInterview() {
               </strong>
 
               <p>
-                Structure your answer clearly
-                and explain your reasoning.
-                Use practical examples whenever
-                possible.
+                Structure your answer
+                clearly and explain your
+                reasoning. Use practical
+                examples whenever possible.
               </p>
 
             </div>
@@ -923,7 +1181,9 @@ function MockInterview() {
         )}
 
 
-        {/* Bottom Info */}
+        {/* ====================================
+            BOTTOM INFO
+        ==================================== */}
 
         <div className="interview-bottom-info">
 
@@ -931,13 +1191,14 @@ function MockInterview() {
 
             <Brain size={14} />
 
-            AI-powered interview evaluation
+            AI-powered interview
+            evaluation
 
           </span>
 
           <span>
-            Your answers are evaluated after
-            submission
+            Your answers are evaluated
+            after submission
           </span>
 
         </div>
