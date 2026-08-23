@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import {
@@ -20,35 +21,141 @@ function InterviewResult() {
 
   const interviewData = location.state || {};
 
-  const jobRole = interviewData.jobRole || "Frontend Developer";
+    const [savedInterview, setSavedInterview] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    const difficulty = interviewData.difficulty || "Medium";
+    const interviewId = interviewData.interviewId;
 
-    const answers = interviewData.answers || [];
+    // Load exact interview from database when coming from History
+    useEffect(() => {
+      const fetchInterview = async () => {
+        // New interview result already has answers
+        if (!interviewId || interviewData.answers?.length > 0) {
+          return;
+        }
+
+        try {
+          setLoading(true);
+
+          const token = localStorage.getItem("token");
+
+          if (!token) {
+            setError("You are not authenticated.");
+            return;
+          }
+
+          const response = await fetch(
+            `http://localhost:5000/api/interviews/${interviewId}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.message || "Failed to load interview"
+            );
+          }
+
+          setSavedInterview(data.interview);
+        } catch (error) {
+          console.error("Load interview result error:", error);
+          setError("Unable to load interview result.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchInterview();
+    }, [interviewId, interviewData.answers]);
+
+
+    // Use database data when viewing from History
+    const currentInterview =
+      savedInterview || interviewData;
+
+    const jobRole =
+      currentInterview.jobRole ||
+      currentInterview.job_role ||
+      "Frontend Developer";
+
+    const difficulty =
+      currentInterview.difficulty ||
+      "Medium";
+
+    const answers =
+      currentInterview.answers ||
+      [];
 
     const questionCount =
-      interviewData.questionCount || answers.length || 0;
+      currentInterview.questionCount ||
+      currentInterview.question_count ||
+      answers.length ||
+      0;
 
     const overallScore =
-      interviewData.finalScore ??
+      currentInterview.finalScore ??
+      currentInterview.score ??
       (answers.length > 0
         ? Math.round(
             answers.reduce(
-              (total, item) => total + item.score,
+              (total, item) =>
+                total + Number(item.score || 0),
               0
             ) / answers.length
           )
         : 0);
 
-    const questionResults = answers.map((item, index) => ({
-      number: index + 1,
-      score: item.score,
-      title: item.question,
-    }));
+    const questionResults = answers.map(
+      (item, index) => ({
+        number: index + 1,
+        score: Number(item.score || 0),
+        title: item.question,
+        answer: item.answer,
+        feedback: item.feedback,
+      })
+    );
 
   const handleRetry = () => {
     navigate("/interview-setup");
   };
+
+  if (loading) {
+      return (
+        <div className="result-page">
+          <main className="result-container">
+            <section className="result-heading">
+              <div>
+                <p>INTERVIEW RESULT</p>
+                <h1>Loading your interview result...</h1>
+              </div>
+            </section>
+          </main>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="result-page">
+          <main className="result-container">
+            <section className="result-heading">
+              <div>
+                <p>INTERVIEW RESULT</p>
+                <h1>Unable to load result</h1>
+                <span>{error}</span>
+              </div>
+            </section>
+          </main>
+        </div>
+      );
+    }
 
   return (
     <div className="result-page">

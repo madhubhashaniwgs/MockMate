@@ -137,107 +137,169 @@ function MockInterview() {
     setShowFeedback(true);
   };
 
-  // Move to next question
   const handleNextQuestion = async () => {
-    const latestAnswer = {
-      questionId: currentQuestionData.id,
-      question: currentQuestionData.question,
-      answer: answer.trim(),
-      score:
-        answers.length > 0
-          ? answers[answers.length - 1].score
-          : 0,
-    };
+  // Make sure the current answer is included
+  const latestAnswer = {
+    questionId: currentQuestionData.id,
+    question: currentQuestionData.question,
+    answer: answer.trim(),
+    score:
+      answers.length > 0
+        ? answers[answers.length - 1].score
+        : 0,
+    feedback:
+      "Your answer demonstrates a good understanding of the main concept. " +
+      "Try adding more practical examples to improve clarity.",
+  };
 
-    const updatedAnswers =
-      answers.some(
-        (item) => item.questionId === currentQuestionData.id
-      )
-        ? answers
-        : [...answers, latestAnswer];
+  const updatedAnswers =
+    answers.some(
+      (item) => item.questionId === currentQuestionData.id
+    )
+      ? answers
+      : [...answers, latestAnswer];
 
-    // Final question
+  // ===============================
+  // FINAL QUESTION
+  // ===============================
+
   if (currentQuestion >= questions.length - 1) {
-  try {
-    setSaving(true);
+    try {
+      setSaving(true);
 
-    // Calculate final interview score
-    const totalScore = updatedAnswers.reduce(
-      (total, item) => total + item.score,
-      0
-    );
+      // Calculate final interview score
+      const totalScore = updatedAnswers.reduce(
+        (total, item) => total + item.score,
+        0
+      );
 
-    const finalScore = Math.round(
-      totalScore / updatedAnswers.length
-    );
+      const finalScore = Math.round(
+        totalScore / updatedAnswers.length
+      );
 
-    // Get JWT token
-    const token = localStorage.getItem("token");
+      // Get JWT token
+      const token = localStorage.getItem("token");
 
-    // Save interview to backend
-    const response = await fetch(
-      "http://localhost:5000/api/interviews",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      // ===============================
+      // 1. SAVE INTERVIEW
+      // ===============================
+
+      const interviewResponse = await fetch(
+        "http://localhost:5000/api/interviews",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            jobRole,
+            difficulty,
+            questionCount: questions.length,
+            score: finalScore,
+            status: "Completed",
+          }),
+        }
+      );
+
+      const interviewData =
+        await interviewResponse.json();
+
+      if (!interviewResponse.ok) {
+        throw new Error(
+          interviewData.message ||
+            "Failed to save interview"
+        );
+      }
+
+      // Get newly created interview ID
+      const interviewId =
+        interviewData.interview.id;
+
+      // ===============================
+      // 2. SAVE ALL ANSWERS
+      // ===============================
+
+      await Promise.all(
+        updatedAnswers.map(async (item) => {
+          const answerResponse = await fetch(
+            `http://localhost:5000/api/interviews/${interviewId}/answers`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                question: item.question,
+                answer: item.answer,
+                score: item.score,
+                feedback: item.feedback,
+              }),
+            }
+          );
+
+          const answerData =
+            await answerResponse.json();
+
+          if (!answerResponse.ok) {
+            throw new Error(
+              answerData.message ||
+                "Failed to save interview answer"
+            );
+          }
+
+          return answerData;
+        })
+      );
+
+      // ===============================
+      // 3. GO TO RESULT PAGE
+      // ===============================
+
+      navigate("/interview-result", {
+        state: {
           jobRole,
           difficulty,
           questionCount: questions.length,
-          score: finalScore,
-          status: "Completed",
-        }),
-      }
-    );
+          answers: updatedAnswers,
+          finalScore,
+          interviewId,
+        },
+      });
 
-    const data = await response.json();
-
-    console.log("INTERVIEW SAVE RESPONSE:", data);
-    console.log("INTERVIEW SAVE STATUS:", response.status);
-
-    if (!response.ok) {
-      throw new Error(
-        data.message || "Failed to save interview"
+    } catch (error) {
+      console.error(
+        "Interview save error:",
+        error
       );
+
+      alert(
+        "Interview completed, but failed to save your result."
+      );
+
+    } finally {
+      setSaving(false);
     }
 
-    // Navigate to result page
-    navigate("/interview-result", {
-      state: {
-        jobRole,
-        difficulty,
-        questionCount: questions.length,
-        answers: updatedAnswers,
-        finalScore,
-        interviewId: data.interview.id,
-      },
-    });
-
-  } catch (error) {
-    console.error("Interview save error:", error);
-
-    alert(
-      "Interview completed, but failed to save your result."
-    );
-  } finally {
-    setSaving(false);
+    return;
   }
 
-  return;
-}
+  // ===============================
+  // NEXT QUESTION
+  // ===============================
 
-    // Next question
-    setCurrentQuestion(
-      (previousQuestion) => previousQuestion + 1
-    );
+  setCurrentQuestion(
+    (previousQuestion) =>
+      previousQuestion + 1
+  );
 
-    setAnswer("");
-    setShowFeedback(false);
-    setTimeLeft(120);
-  };
+  setAnswer("");
+  setShowFeedback(false);
+  setTimeLeft(120);
+};
+
+
 
   // Exit interview
   const handleExit = () => {
