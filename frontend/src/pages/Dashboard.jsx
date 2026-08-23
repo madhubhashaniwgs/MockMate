@@ -11,12 +11,23 @@ import {
   LogOut,
 } from "lucide-react";
 
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import "./Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
+
+  const [user] = useState(() => {
+  const savedUser = localStorage.getItem("user");
+
+  return savedUser ? JSON.parse(savedUser) : null;
+});
+
+const userName = user?.name || "User";
+
+const userInitial = userName.charAt(0).toUpperCase();
 
   const stats = [
     {
@@ -60,9 +71,19 @@ function Dashboard() {
     },
   ];
 
-  const handleLogout = () => {
-    navigate("/");
-  };
+      const handleLogout = () => {
+      // Remove authentication token
+      localStorage.removeItem("token");
+
+      // Remove user information
+      localStorage.removeItem("user");
+
+      // Remove old demo authentication if it exists
+      localStorage.removeItem("demoUser");
+
+      // Redirect to login page
+      navigate("/login", { replace: true });
+    };
 
   return (
     <div className="dashboard-page">
@@ -156,18 +177,18 @@ function Dashboard() {
           <div className="dashboard-profile">
 
             <div className="profile-avatar">
-              M
-            </div>
+                {userInitial}
+              </div>
 
-            <div className="profile-info">
-              <strong>
-                User
-              </strong>
+              <div className="profile-info">
+                <strong>
+                  {userName}
+                </strong>
 
-              <span>
-                Interview Candidate
-              </span>
-            </div>
+                <span>
+                  Interview Candidate
+                </span>
+              </div>
 
           </div>
 
