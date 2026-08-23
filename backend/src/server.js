@@ -7,6 +7,7 @@ const authRoutes = require("./routes/auth");
 const interviewRoutes = require("./routes/interviewRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 
+
 const app = express();
 
 app.use(cors());
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/ai", aiRoutes);
+
 
 app.get("/", async (req, res) => {
   try {
