@@ -422,10 +422,10 @@ function InterviewHistory() {
                       <Link
                         to="/interview-result"
                         state={{
+                          interviewId: interview.id,
                           jobRole: interview.role,
                           difficulty: interview.difficulty,
-                          questionCount:
-                            interview.questions,
+                          questionCount: interview.questions,
                         }}
                         className="view-result-btn"
                       >
@@ -511,6 +511,7 @@ function InterviewHistory() {
                 <Link
                   to="/interview-result"
                   state={{
+                    interviewId: interview.id,
                     jobRole: interview.role,
                     difficulty: interview.difficulty,
                     questionCount: interview.questions,

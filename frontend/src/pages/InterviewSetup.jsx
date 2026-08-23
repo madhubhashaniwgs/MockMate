@@ -19,6 +19,7 @@ function InterviewSetup() {
   const [jobRole, setJobRole] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [questionCount, setQuestionCount] = useState(5);
+  const [generating, setGenerating] = useState(false);
 
   const jobRoles = [
     "Frontend Developer",
@@ -47,19 +48,97 @@ function InterviewSetup() {
     },
   ];
 
-  const handleStartInterview = () => {
-    if (!jobRole || !difficulty) {
-      return;
-    }
+  
+    const handleStartInterview = async () => {
+      if (!jobRole || !difficulty || generating) {
+        return;
+      }
 
-    navigate("/mock-interview", {
-      state: {
-        jobRole,
-        difficulty,
-        questionCount,
-      },
-    });
-  };
+      try {
+        setGenerating(true);
+
+        const token = localStorage.getItem("token");
+      
+
+        if (!token) {
+          throw new Error(
+            "You are not authenticated. Please login again."
+          );
+        }
+
+        const response = await fetch(
+          "http://localhost:5000/api/ai/generate-questions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              jobRole,
+              difficulty,
+              questionCount,
+            }),
+          }
+        );
+
+        const responseText = await response.text();
+
+
+        let data;
+
+        try {
+          data = JSON.parse(responseText);
+        } catch (error) {
+          console.error("Response is not JSON:", responseText);
+
+          throw new Error(
+            "Server returned an invalid response. Check the API URL."
+          );
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+            "Failed to generate interview questions"
+          );
+        }
+
+        if (!data.questions || !Array.isArray(data.questions)) {
+          throw new Error(
+            "Invalid questions received from AI."
+          );
+        }
+
+        console.log(
+          "Generated questions:",
+          data.questions
+        );
+
+        navigate("/mock-interview", {
+          state: {
+            jobRole,
+            difficulty,
+            questionCount,
+            questions: data.questions,
+          },
+        });
+
+      } catch (error) {
+        console.error(
+          "Question generation error:",
+          error
+        );
+
+        alert(
+          error.message ||
+          "Failed to generate interview questions."
+        );
+
+      } finally {
+        setGenerating(false);
+      }
+    };
 
   return (
     <div className="interview-setup-page">
@@ -320,19 +399,24 @@ function InterviewSetup() {
 
           {/* Start Button */}
 
-          <button
+         <button
             type="button"
             className="begin-interview-btn"
-            disabled={!jobRole || !difficulty}
+            disabled={
+              !jobRole ||
+              !difficulty ||
+              generating
+            }
             onClick={handleStartInterview}
           >
-
             <Play size={18} />
 
-            Start Interview
-
+            {generating
+              ? "Generating Questions..."
+              : "Start Interview"}
           </button>
 
+            
 
           {(!jobRole || !difficulty) && (
             <p className="setup-note">

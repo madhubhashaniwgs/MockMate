@@ -1,14 +1,14 @@
 const express = require("express");
-
 const pool = require("../config/database");
 const authMiddleware = require("../middleware/authMiddleware");
+const { GoogleGenAI } = require("@google/genai");
 
 const router = express.Router();
 
 
-// ===============================
+// =====================================
 // CREATE INTERVIEW
-// ===============================
+// =====================================
 
 router.post("/", authMiddleware, async (req, res) => {
   try {
@@ -27,10 +27,19 @@ router.post("/", authMiddleware, async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO interviews
-        (user_id, job_role, difficulty, question_count, score, status)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
+      `
+        INSERT INTO interviews
+        (
+          user_id,
+          job_role,
+          difficulty,
+          question_count,
+          score,
+          status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `,
       [
         req.user.id,
         jobRole,
@@ -47,7 +56,10 @@ router.post("/", authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Create interview error:", error.message);
+    console.error(
+      "Create interview error:",
+      error.message
+    );
 
     res.status(500).json({
       message: "Failed to save interview",
@@ -56,24 +68,26 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 
-// ===============================
+// =====================================
 // GET CURRENT USER'S INTERVIEWS
-// ===============================
+// =====================================
 
 router.get("/", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT
-        id,
-        job_role,
-        difficulty,
-        question_count,
-        score,
-        status,
-        created_at
-       FROM interviews
-       WHERE user_id = $1
-       ORDER BY created_at DESC`,
+      `
+        SELECT
+          id,
+          job_role,
+          difficulty,
+          question_count,
+          score,
+          status,
+          created_at
+        FROM interviews
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+      `,
       [req.user.id]
     );
 
@@ -83,13 +97,447 @@ router.get("/", authMiddleware, async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Get interviews error:", error.message);
+    console.error(
+      "Get interviews error:",
+      error.message
+    );
 
     res.status(500).json({
       message: "Failed to retrieve interviews",
     });
   }
 });
+
+
+// =====================================
+// AI EVALUATION - GEMINI
+// =====================================
+
+router.post(
+  "/evaluate",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const {
+        question,
+        answer,
+        jobRole,
+        difficulty,
+      } = req.body;
+
+      if (!question || !answer) {
+        return res.status(400).json({
+          message: "Question and answer are required",
+        });
+      }
+
+      if (!process.env.GEMINI_API_KEY) {
+        return res.status(500).json({
+          message: "Gemini API key is not configured",
+        });
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+      });
+
+      const prompt = `
+        You are an expert technical interviewer.
+
+        Evaluate the candidate's answer.
+
+        Job Role: ${jobRole || "General"}
+
+        Difficulty: ${difficulty || "Medium"}
+
+        Interview Question:
+        ${question}
+
+        Candidate Answer:
+        ${answer}
+
+        Evaluate the answer based on:
+
+        1. Technical correctness
+        2. Understanding of the concept
+        3. Relevance
+        4. Completeness
+        5. Clarity
+        6. Practical examples where appropriate
+
+        Give a score from 0 to 100.
+
+        Return ONLY valid JSON.
+
+        Do not use markdown.
+        Do not use code blocks.
+
+        Use exactly this structure:
+
+        {
+        "score": 0,
+        "feedback": "Concise feedback about the answer.",
+        "strength": "The strongest part of the answer.",
+        "improvement": "The most important thing to improve."
+        }
+
+        Rules:
+
+        - score must be an integer between 0 and 100
+        - feedback must be concise and easy to understand
+        - feedback must be between 150 and 250 characters
+        - feedback must not exceed 250 characters
+        - strength must describe one clear positive aspect
+        - improvement must describe one actionable improvement
+        - Do not repeat the same information in feedback, strength, and improvement
+        `;
+
+      const response =
+        await ai.models.generateContent({
+          model: "gemini-3.6-flash",
+          contents: prompt,
+        });
+
+      let rawOutput =
+        response.text?.trim();
+
+      if (!rawOutput) {
+        throw new Error(
+          "Gemini returned an empty response"
+        );
+      }
+
+
+      // =====================================
+      // REMOVE MARKDOWN CODE BLOCKS IF GEMINI
+      // RETURNS THEM
+      // =====================================
+
+      rawOutput = rawOutput
+        .replace(/```json/gi, "")
+        .replace(/```/g, "")
+        .trim();
+
+
+      let evaluation;
+
+      try {
+        evaluation = JSON.parse(rawOutput);
+
+      } catch (parseError) {
+
+        console.error(
+          "Gemini JSON parse error:",
+          rawOutput
+        );
+
+        return res.status(500).json({
+          message:
+            "Gemini returned invalid evaluation data",
+        });
+      }
+
+
+      // =====================================
+      // VALIDATE SCORE
+      // =====================================
+
+      let score =
+        Number(evaluation.score);
+
+      if (Number.isNaN(score)) {
+        return res.status(500).json({
+          message:
+            "Gemini returned an invalid score",
+        });
+      }
+
+
+      // Keep score between 0 and 100
+
+      score = Math.max(
+        0,
+        Math.min(100, Math.round(score))
+      );
+
+
+      // =====================================
+      // RETURN AI EVALUATION
+      // =====================================
+
+      res.json({
+        message:
+          "Answer evaluated successfully",
+
+        evaluation: {
+        score,
+
+        feedback:
+            (evaluation.feedback ||
+            "No detailed feedback provided."
+            ).slice(0, 250),
+
+        strength:
+            (evaluation.strength ||
+            "No specific strength identified."
+            ).slice(0, 150),
+
+        improvement:
+            (evaluation.improvement ||
+            "Continue practicing and improving your answer."
+            ).slice(0, 180),
+        },
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Gemini evaluation error:",
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to evaluate answer",
+      });
+    }
+  }
+);
+
+
+// =====================================
+// SAVE INTERVIEW ANSWER
+// =====================================
+
+router.post(
+  "/:interviewId/answers",
+  authMiddleware,
+  async (req, res) => {
+
+    try {
+
+      const { interviewId } =
+        req.params;
+
+      const {
+        question,
+        answer,
+        score,
+        feedback,
+        strength,
+        improvement,
+      } = req.body;
+
+
+      // =====================================
+      // VALIDATION
+      // =====================================
+
+      if (!question || !answer) {
+        return res.status(400).json({
+          message:
+            "Question and answer are required",
+        });
+      }
+
+
+      // =====================================
+      // CHECK INTERVIEW OWNERSHIP
+      // =====================================
+
+      const interviewCheck =
+        await pool.query(
+          `
+            SELECT id
+            FROM interviews
+            WHERE id = $1
+            AND user_id = $2
+          `,
+          [
+            interviewId,
+            req.user.id,
+          ]
+        );
+
+      if (
+        interviewCheck.rows.length === 0
+      ) {
+        return res.status(404).json({
+          message: "Interview not found",
+        });
+      }
+
+
+      // =====================================
+      // SAVE ANSWER
+      // =====================================
+
+      const result =
+        await pool.query(
+          `
+            INSERT INTO interview_answers
+            (
+              interview_id,
+              question,
+              answer,
+              score,
+              feedback,
+              strength,
+              improvement
+            )
+            VALUES
+            (
+              $1,
+              $2,
+              $3,
+              $4,
+              $5,
+              $6,
+              $7
+            )
+            RETURNING *
+          `,
+          [
+            interviewId,
+            question,
+            answer,
+            score ?? null,
+            feedback ?? null,
+            strength ?? null,
+            improvement ?? null,
+          ]
+        );
+
+
+      res.status(201).json({
+        message:
+          "Interview answer saved successfully",
+
+        answer:
+          result.rows[0],
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Save interview answer error:",
+        error.message
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to save interview answer",
+      });
+    }
+  }
+);
+
+
+// =====================================
+// GET SINGLE INTERVIEW WITH ANSWERS
+// =====================================
+
+router.get(
+  "/:interviewId",
+  authMiddleware,
+  async (req, res) => {
+
+    try {
+
+      const { interviewId } =
+        req.params;
+
+
+      // =====================================
+      // GET INTERVIEW
+      // =====================================
+
+      const interviewResult =
+        await pool.query(
+          `
+            SELECT
+              id,
+              job_role,
+              difficulty,
+              question_count,
+              score,
+              status,
+              created_at
+            FROM interviews
+            WHERE id = $1
+            AND user_id = $2
+          `,
+          [
+            interviewId,
+            req.user.id,
+          ]
+        );
+
+
+      if (
+        interviewResult.rows.length === 0
+      ) {
+        return res.status(404).json({
+          message:
+            "Interview not found",
+        });
+      }
+
+
+      // =====================================
+      // GET ANSWERS
+      // =====================================
+
+      const answersResult =
+        await pool.query(
+          `
+            SELECT
+              id,
+              question,
+              answer,
+              score,
+              feedback,
+              strength,
+              improvement,
+              created_at
+            FROM interview_answers
+            WHERE interview_id = $1
+            ORDER BY id ASC
+          `,
+          [interviewId]
+        );
+
+
+      // =====================================
+      // RETURN INTERVIEW
+      // =====================================
+
+      res.json({
+        message:
+          "Interview retrieved successfully",
+
+        interview: {
+          ...interviewResult.rows[0],
+
+          answers:
+            answersResult.rows,
+        },
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Get single interview error:",
+        error.message
+      );
+
+      res.status(500).json({
+        message:
+          "Failed to retrieve interview",
+      });
+    }
+  }
+);
 
 
 module.exports = router;
