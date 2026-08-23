@@ -13,9 +13,9 @@ import {
   Send,
 } from "lucide-react";
 
-import "./Interview.css";
+import "./MockInterview.css";
 
-function Interview() {
+function MockInterview() {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -67,6 +67,7 @@ function Interview() {
   const [answers, setAnswers] = useState([]);
   const [showFeedback, setShowFeedback] = useState(false);
   const [timeLeft, setTimeLeft] = useState(120);
+  const [saving, setSaving] = useState(false);
 
   const currentQuestionData = questions[currentQuestion];
 
@@ -137,7 +138,7 @@ function Interview() {
   };
 
   // Move to next question
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
     const latestAnswer = {
       questionId: currentQuestionData.id,
       question: currentQuestionData.question,
@@ -156,18 +157,77 @@ function Interview() {
         : [...answers, latestAnswer];
 
     // Final question
-    if (currentQuestion >= questions.length - 1) {
-      navigate("/interview-result", {
-        state: {
+  if (currentQuestion >= questions.length - 1) {
+  try {
+    setSaving(true);
+
+    // Calculate final interview score
+    const totalScore = updatedAnswers.reduce(
+      (total, item) => total + item.score,
+      0
+    );
+
+    const finalScore = Math.round(
+      totalScore / updatedAnswers.length
+    );
+
+    // Get JWT token
+    const token = localStorage.getItem("token");
+
+    // Save interview to backend
+    const response = await fetch(
+      "http://localhost:5000/api/interviews",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
           jobRole,
           difficulty,
           questionCount: questions.length,
-          answers: updatedAnswers,
-        },
-      });
+          score: finalScore,
+          status: "Completed",
+        }),
+      }
+    );
 
-      return;
+    const data = await response.json();
+
+    console.log("INTERVIEW SAVE RESPONSE:", data);
+    console.log("INTERVIEW SAVE STATUS:", response.status);
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to save interview"
+      );
     }
+
+    // Navigate to result page
+    navigate("/interview-result", {
+      state: {
+        jobRole,
+        difficulty,
+        questionCount: questions.length,
+        answers: updatedAnswers,
+        finalScore,
+        interviewId: data.interview.id,
+      },
+    });
+
+  } catch (error) {
+    console.error("Interview save error:", error);
+
+    alert(
+      "Interview completed, but failed to save your result."
+    );
+  } finally {
+    setSaving(false);
+  }
+
+  return;
+}
 
     // Next question
     setCurrentQuestion(
@@ -185,7 +245,7 @@ function Interview() {
   };
 
   return (
-    <div className="interview-page">
+    <div className="mock-interview-page">
 
       {/* ================= HEADER ================= */}
 
@@ -493,10 +553,13 @@ function Interview() {
                 type="button"
                 className="next-question-btn"
                 onClick={handleNextQuestion}
+                disabled={saving}
               >
 
                 <span>
-                  {currentQuestion === questions.length - 1
+                  {saving
+                    ? "Saving Interview..."
+                    : currentQuestion === questions.length - 1
                     ? "Complete Interview"
                     : "Next Question"}
                 </span>
@@ -566,4 +629,4 @@ function Interview() {
   );
 }
 
-export default Interview;
+export default MockInterview;
