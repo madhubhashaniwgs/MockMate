@@ -244,25 +244,27 @@ function Dashboard() {
             </h1>
           </div>
 
-          <div className="dashboard-profile">
+          <Link
+          to="/profile"
+          className="dashboard-profile"
+        >
+          <div className="profile-avatar">
+            {userInitial}
+          </div>
 
-            <div className="profile-avatar">
-              {userInitial}
-            </div>
+          <div className="profile-info">
 
-            <div className="profile-info">
+            <strong>
+              {userName}
+            </strong>
 
-              <strong>
-                {userName}
-              </strong>
-
-              <span>
-                Interview Candidate
-              </span>
-
-            </div>
+            <span>
+              Interview Candidate
+            </span>
 
           </div>
+
+        </Link>
 
         </header>
 
