@@ -91,5 +91,152 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
+        // ===============================
+        // SAVE INTERVIEW ANSWER
+        // ===============================
+
+        router.post(
+        "/:interviewId/answers",
+        authMiddleware,
+        async (req, res) => {
+            try {
+            const { interviewId } = req.params;
+
+            const {
+                question,
+                answer,
+                score,
+                feedback,
+            } = req.body;
+
+            if (!question || !answer) {
+                return res.status(400).json({
+                message: "Question and answer are required",
+                });
+            }
+
+            // Check whether the interview belongs to
+            // the currently logged-in user
+            const interviewCheck = await pool.query(
+                `SELECT id
+                FROM interviews
+                WHERE id = $1 AND user_id = $2`,
+                [interviewId, req.user.id]
+            );
+
+            if (interviewCheck.rows.length === 0) {
+                return res.status(404).json({
+                message: "Interview not found",
+                });
+            }
+
+            // Save answer
+            const result = await pool.query(
+                `INSERT INTO interview_answers
+                (
+                    interview_id,
+                    question,
+                    answer,
+                    score,
+                    feedback
+                )
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING *`,
+                [
+                interviewId,
+                question,
+                answer,
+                score ?? null,
+                feedback ?? null,
+                ]
+            );
+
+            res.status(201).json({
+                message: "Interview answer saved successfully",
+                answer: result.rows[0],
+            });
+
+            } catch (error) {
+            console.error(
+                "Save interview answer error:",
+                error.message
+            );
+
+            res.status(500).json({
+                message: "Failed to save interview answer",
+            });
+            }
+        }
+        );
+
+        // ===============================
+// GET SINGLE INTERVIEW WITH ANSWERS
+// ===============================
+
+router.get(
+  "/:interviewId",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const { interviewId } = req.params;
+
+      // Get interview details
+      const interviewResult = await pool.query(
+        `SELECT
+          id,
+          job_role,
+          difficulty,
+          question_count,
+          score,
+          status,
+          created_at
+         FROM interviews
+         WHERE id = $1
+           AND user_id = $2`,
+        [interviewId, req.user.id]
+      );
+
+      if (interviewResult.rows.length === 0) {
+        return res.status(404).json({
+          message: "Interview not found",
+        });
+      }
+
+      // Get all answers for this interview
+      const answersResult = await pool.query(
+        `SELECT
+          id,
+          question,
+          answer,
+          score,
+          feedback,
+          created_at
+         FROM interview_answers
+         WHERE interview_id = $1
+         ORDER BY id ASC`,
+        [interviewId]
+      );
+
+      res.json({
+        message: "Interview retrieved successfully",
+        interview: {
+          ...interviewResult.rows[0],
+          answers: answersResult.rows,
+        },
+      });
+
+    } catch (error) {
+      console.error(
+        "Get single interview error:",
+        error.message
+      );
+
+      res.status(500).json({
+        message: "Failed to retrieve interview",
+      });
+    }
+  }
+);
+
 
 module.exports = router;
