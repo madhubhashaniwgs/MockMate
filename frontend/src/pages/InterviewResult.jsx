@@ -21,43 +21,30 @@ function InterviewResult() {
   const interviewData = location.state || {};
 
   const jobRole = interviewData.jobRole || "Frontend Developer";
-  const difficulty = interviewData.difficulty || "Medium";
-  const questionCount = interviewData.questionCount || 5;
 
-  const overallScore = 82;
+    const difficulty = interviewData.difficulty || "Medium";
 
-  const questionResults = [
-    {
-      number: 1,
-      score: 85,
-      title:
-        "Difference between let, const, and var in JavaScript",
-    },
-    {
-      number: 2,
-      score: 88,
-      title:
-        "Component-based architecture in React",
-    },
-    {
-      number: 3,
-      score: 78,
-      title:
-        "State and props in React",
-    },
-    {
-      number: 4,
-      score: 80,
-      title:
-        "Promises and async/await",
-    },
-    {
-      number: 5,
-      score: 79,
-      title:
-        "React application performance optimization",
-    },
-  ];
+    const answers = interviewData.answers || [];
+
+    const questionCount =
+      interviewData.questionCount || answers.length || 0;
+
+    const overallScore =
+      interviewData.finalScore ??
+      (answers.length > 0
+        ? Math.round(
+            answers.reduce(
+              (total, item) => total + item.score,
+              0
+            ) / answers.length
+          )
+        : 0);
+
+    const questionResults = answers.map((item, index) => ({
+      number: index + 1,
+      score: item.score,
+      title: item.question,
+    }));
 
   const handleRetry = () => {
     navigate("/interview-setup");
