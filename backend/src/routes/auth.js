@@ -7,6 +7,11 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+
+// ==========================================
+// register
+// ==========================================
+
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -55,6 +60,9 @@ router.post("/register", async (req, res) => {
 });
 
 
+// ==========================================
+//login
+// ==========================================
 
 
 router.post("/login", async (req, res) => {
@@ -142,6 +150,111 @@ router.get("/profile", authMiddleware, async (req, res) => {
 
     res.status(500).json({
       message: "Failed to retrieve profile",
+    });
+  }
+});
+
+
+
+// ==========================================
+// CHANGE PASSWORD
+// ==========================================
+
+router.put("/change-password", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    } = req.body;
+
+    // Validate fields
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "All password fields are required.",
+      });
+    }
+
+    // Check new password confirmation
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New passwords do not match.",
+      });
+    }
+
+    // Password length
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 6 characters long.",
+      });
+    }
+
+    // Get current user
+    const result = await pool.query(
+      "SELECT password FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Check current password
+    const isPasswordCorrect = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+
+    if (!isPasswordCorrect) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect.",
+      });
+    }
+
+    // Prevent same password
+    const isSamePassword = await bcrypt.compare(
+      newPassword,
+      user.password
+    );
+
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be different from current password.",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await pool.query(
+      "UPDATE users SET password = $1 WHERE id = $2",
+      [hashedPassword, userId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully.",
+    });
+
+  } catch (error) {
+    console.error("Change password error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error while changing password.",
     });
   }
 });
