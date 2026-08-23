@@ -202,7 +202,7 @@ function Dashboard() {
           </div>
 
           <Link
-            to="/dashboard"
+            to="/performance"
             className="sidebar-link"
           >
             <BarChart3 size={18} />
