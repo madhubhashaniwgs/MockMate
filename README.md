@@ -145,7 +145,7 @@ User Registration / Login
 ## Project Structure
 
 ```text
-ai-career-development-platform
+ai-powered-interview-practice-platform
 │
 ├── frontend
 │   ├── src
