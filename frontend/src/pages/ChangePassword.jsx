@@ -141,7 +141,7 @@ function ChangePassword() {
           className="change-password-logo"
         >
           <Brain size={25} />
-          <span>CareerAI</span>
+          <span>MockMate</span>
         </Link>
 
       </header>
@@ -167,7 +167,7 @@ function ChangePassword() {
             </h2>
 
             <p>
-              Update your password to keep your CareerAI
+              Update your password to keep your MockMate
               account secure.
             </p>
           </div>

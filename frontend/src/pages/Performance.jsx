@@ -459,7 +459,7 @@ function Performance() {
 
         <Link to="/" className="performance-logo">
           <Brain size={25} />
-          <span>CareerAI</span>
+          <span>MockMate</span>
         </Link>  
 
       </header>
@@ -500,7 +500,7 @@ function Performance() {
             className="performance-back-link"
           >
             <Brain size={25} />
-            <span>CareerAI</span>
+            <span>MockMate</span>
           </Link>
 
         </header>
@@ -546,22 +546,20 @@ function Performance() {
 
         <header className="performance-header">
 
-          <Link
-            to="/dashboard"
-            className="performance-logo"
-          >
-            <Brain size={25} />
-            <span>CareerAI</span>
-          </Link>
+        <Link
+          to="/dashboard"
+          className="performance-back-link">
+            <ArrowLeft size={17} />
+          Back to Dashboard
+        </Link>
 
-          <Link
-            to="/dashboard"
-            className="performance-dashboard-link"
-          >
-            Back to Dashboard
-          </Link>
 
-        </header>
+        <Link to="/" className="performance-logo">
+          <Brain size={25} />
+          <span>MockMate</span>
+        </Link>  
+
+      </header>
 
         <main className="performance-container">
 
@@ -645,7 +643,7 @@ function Performance() {
 
         <Link to="/" className="performance-logo">
           <Brain size={25} />
-          <span>CareerAI</span>
+          <span>MockMate</span>
         </Link>  
 
       </header>

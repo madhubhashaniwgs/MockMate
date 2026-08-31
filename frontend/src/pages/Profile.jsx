@@ -281,7 +281,7 @@ function Profile() {
             className="profile-logo"
           >
             <Brain size={25} />
-            <span>CareerAI</span>
+            <span>MockMate</span>
           </Link>
 
           <div className="profile-header-space"></div>
@@ -339,7 +339,7 @@ function Profile() {
             className="profile-logo"
           >
             <Brain size={25} />
-            <span>CareerAI</span>
+            <span>MockMate</span>
           </Link>
 
           <div className="profile-header-space"></div>
@@ -440,7 +440,7 @@ function Profile() {
           className="profile-logo"
         >
           <Brain size={25} />
-          <span>CareerAI</span>
+          <span>MockMate</span>
         </Link>
 
 
@@ -473,7 +473,7 @@ function Profile() {
             </h1>
 
             <p>
-              View and manage your CareerAI
+              View and manage your MockMate
               account information.
             </p>
 
@@ -507,7 +507,7 @@ function Profile() {
               </p>
 
               <span>
-                CareerAI Member
+                MockMate Member
               </span>
 
             </div>

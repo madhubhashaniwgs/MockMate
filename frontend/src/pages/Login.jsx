@@ -64,7 +64,7 @@ function Login() {
 
         <Link to="/" className="login-logo">
           <Brain size={30} />
-          <span>CareerAI</span>
+          <span>MockMate</span>
         </Link>
 
 
