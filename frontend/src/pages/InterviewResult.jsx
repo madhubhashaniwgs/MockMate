@@ -361,7 +361,7 @@ function InterviewResult() {
           <Brain size={25} />
 
           <span>
-            CareerAI
+            MockMate
           </span>
 
         </Link>

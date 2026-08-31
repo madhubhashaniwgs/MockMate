@@ -62,45 +62,42 @@
   gap: 30px;
 }
 
-
-/* Back / Exit */
-
-.interview-back {
+.interview-header-left button{
   display: inline-flex;
   align-items: center;
+  gap: 8px;
 
-  gap: 7px;
+  padding: 6px 10px;
 
-  padding: 5px 0;
+  border-radius: 8px;
 
-  color: #64748b;
+  color: #94a3b8;
 
-  font-size: 10px;
-  font-weight: 500;
+  background:
+    rgba(56, 189, 248, 0.04);
 
-  text-decoration: none;
+  border:
+    1px solid rgba(56, 189, 248, 0.08);
+
+  font-size: 11px;
+  font-weight: 600;
+
+  cursor: pointer;
 
   transition:
     color 0.2s ease,
-    transform 0.2s ease;
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
+
+
 
 
 .interview-back:hover {
   color: #38bdf8;
-
-  transform: translateX(-1px);
 }
 
 
-.interview-back:focus-visible {
-  outline: 2px solid
-    rgba(56, 189, 248, 0.35);
-
-  outline-offset: 4px;
-
-  border-radius: 4px;
-}
 
 
 /* =========================================================
@@ -110,14 +107,10 @@
 .interview-brand {
   display: flex;
   align-items: center;
-
   gap: 8px;
-
   color: #60a5fa;
-
   font-size: 20px;
   font-weight: 700;
-
   letter-spacing: -0.3px;
 }
 
@@ -1630,4 +1623,182 @@
     font-size: 8px;
   }
 
+}
+
+
+/* ================================
+   Exit Interview Modal
+================================ */
+
+.exit-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 9999;
+
+  animation: fadeIn 0.2s ease-out;
+}
+
+.exit-modal {
+  width: 420px;
+  max-width: calc(100% - 40px);
+
+   background: #101e43;
+  border-radius: 20px;
+
+  padding: 32px;
+
+  text-align: center;
+
+  box-shadow:
+    0 25px 50px rgba(0, 0, 0, 0.2);
+
+  animation: modalSlideUp 0.25s ease-out;
+}
+
+/* Warning Icon */
+
+.exit-modal-icon {
+  width: 64px;
+  height: 64px;
+
+  margin: 0 auto 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+
+  border-radius: 50%;
+
+  font-size: 30px;
+}
+
+/* Title */
+
+.exit-modal h2 {
+  margin: 0 0 12px;
+
+  color: #f8f9fb;
+
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* Description */
+
+.exit-modal p {
+  margin: 0 0 28px;
+
+  color: #6b7280;
+
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* Buttons */
+
+.exit-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* Continue */
+
+.exit-cancel-btn,
+.exit-confirm-btn {
+  flex: 1;
+
+  padding: 12px 18px;
+
+  border-radius: 10px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.exit-cancel-btn {
+  background: #f3f4f6;
+  color: #374151;
+
+  border: 1px solid #e5e7eb;
+}
+
+.exit-cancel-btn:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+/* Exit */
+
+.exit-confirm-btn {
+  background: #ef4444;
+  color: white;
+
+  border: 1px solid #ef4444;
+
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);
+}
+
+.exit-confirm-btn:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+
+  transform: translateY(-1px);
+
+  box-shadow: 0 6px 14px rgba(239, 68, 68, 0.3);
+}
+
+/* Animations */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 480px) {
+  .exit-modal {
+    padding: 25px 20px;
+  }
+
+  .exit-modal-actions {
+    flex-direction: column;
+  }
+
+  .exit-cancel-btn,
+  .exit-confirm-btn {
+    width: 100%;
+  }
 }

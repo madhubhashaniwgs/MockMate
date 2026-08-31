@@ -65,7 +65,7 @@ function ForgotPassword() {
 
         <Link to="/" className="forgot-logo">
           <Brain size={28} />
-          <span>CareerAI</span>
+          <span>MockMate</span>
         </Link>
 
         <Link to="/login" className="forgot-back">

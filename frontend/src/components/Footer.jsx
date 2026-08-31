@@ -6,14 +6,14 @@ return(
 
 <footer className="footer">
 
-<h2>CareerAI</h2>
+<h2>MockMate</h2>
 
 <p>
 AI powered interview preparation platform
 </p>
 
 <div>
-© 2026 CareerAI. All rights reserved.
+© 2026 MockMate. All rights reserved.
 </div>
 
 </footer>

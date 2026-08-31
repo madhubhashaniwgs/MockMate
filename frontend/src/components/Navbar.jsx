@@ -8,7 +8,7 @@ function Navbar() {
 
       <div className="logo">
         <Brain size={32}/>
-        <span>CareerAI</span>
+        <span>MockMate</span>
       </div>
 
 

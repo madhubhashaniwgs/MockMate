@@ -154,7 +154,7 @@ function InterviewSetup() {
 
         <Link to="/" className="setup-logo">
           <Brain size={25} />
-          <span>CareerAI</span>
+          <span>MockMate</span>
         </Link>
 
       </header>
