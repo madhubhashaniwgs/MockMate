@@ -1,6 +1,6 @@
-# AI Career Development Platform
+#  AI-Powered Interview Practice Platform
 
-An AI-powered career development platform designed to help users prepare for technical interviews through personalized mock interviews, AI-powered answer evaluation, performance feedback, and interview history tracking.
+An AI-powered Interview Practice  platform designed to help users prepare for technical interviews through personalized mock interviews, AI-powered answer evaluation, performance feedback, and interview history tracking.
 
 The current version focuses on delivering a complete **text-based AI mock interview experience**, while additional career development features are planned for future releases.
 
@@ -8,7 +8,7 @@ The current version focuses on delivering a complete **text-based AI mock interv
 
 ## Overview
 
-The AI Career Development Platform allows users to simulate job interviews based on their selected career role.
+The AI Interview Practice Platform allows users to simulate job interviews based on their selected career role.
 
 Users can:
 
@@ -205,7 +205,7 @@ The following features are planned for future versions:
 
 ## Purpose
 
-The main objective of this project is to demonstrate how artificial intelligence can be integrated into a full-stack web application to provide personalized career development and interview preparation support.
+The main objective of this project is to demonstrate how artificial intelligence can be integrated into a full-stack web application to provide personalized interview Practice and interview preparation support.
 
 The project also demonstrates practical experience in:
 
