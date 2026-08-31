@@ -103,7 +103,7 @@ function Register() {
 
         <Link to="/" className="auth-logo">
           <Brain size={30} />
-          <span>CareerAI</span>
+          <span>MockMate</span>
         </Link>
 
         <div className="auth-visual-content">
@@ -148,7 +148,7 @@ function Register() {
         </div>
 
         <div className="auth-visual-footer">
-          © 2026 CareerAI
+          © 2026 MockMate
         </div>
 
       </div>

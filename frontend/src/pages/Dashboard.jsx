@@ -164,7 +164,7 @@ function Dashboard() {
 
         <Link to="/" className="dashboard-logo">
           <Brain size={29} />
-          <span>CareerAI</span>
+          <span>MockMate</span>
         </Link>
 
         <nav className="sidebar-nav">

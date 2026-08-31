@@ -109,7 +109,7 @@ function ResetPassword() {
           className="reset-password-logo"
         >
           <Brain size={28} />
-          <span>CareerAI</span>
+          <span>MockMate</span>
         </Link>
 
         <div className="reset-password-icon">
@@ -122,7 +122,7 @@ function ResetPassword() {
 
           <p>
             Create a new password for your
-            CareerAI account.
+            MockMate account.
           </p>
 
         </div>

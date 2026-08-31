@@ -586,17 +586,23 @@ function MockInterview() {
   // EXIT INTERVIEW
   // ==========================================
 
-  const handleExit = () => {
-    const confirmExit =
-      window.confirm(
-        "Are you sure you want to exit? Your current interview progress will be lost."
-      );
+  const [showExitModal, setShowExitModal] = useState(false);
 
-    if (confirmExit) {
-      navigate("/dashboard");
-    }
+  const handleExit = () => {
+    setShowExitModal(true);
   };
 
+  const confirmExit = () => {
+    setShowExitModal(false);
+    navigate("/dashboard");
+  };
+
+  const cancelExit = () => {
+    setShowExitModal(false);
+  };
+
+
+  
   // ==========================================
   // NO INTERVIEW SESSION
   // ==========================================
@@ -694,7 +700,7 @@ function MockInterview() {
             <Brain size={24} />
 
             <span>
-              CareerAI
+              MockMate
             </span>
           </Link>
 
@@ -1205,7 +1211,43 @@ function MockInterview() {
 
       </main>
 
+      {showExitModal && (
+      <div className="exit-modal-overlay">
+        <div className="exit-modal">
+          <div className="exit-modal-icon">
+            ⚠️
+          </div>
+
+          <h2>Exit Interview?</h2>
+
+          <p>
+            Are you sure you want to exit?
+            <br />
+            Your current interview progress will be lost.
+          </p>
+
+          <div className="exit-modal-actions">
+            <button
+              className="exit-cancel-btn"
+              onClick={cancelExit}
+            >
+              Continue Interview
+            </button>
+
+            <button
+              className="exit-confirm-btn"
+              onClick={confirmExit}
+            >
+              Exit Interview
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     </div>
+
+    
   );
 }
 
