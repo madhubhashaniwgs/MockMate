@@ -12,7 +12,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-import "./InterviewHistory.css";
+import "../styles/InterviewHistory.css";
 
 function InterviewHistory() {
   

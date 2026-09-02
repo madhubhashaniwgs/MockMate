@@ -15,7 +15,7 @@ import {
   BriefcaseBusiness,
 } from "lucide-react";
 
-import "./Performance.css";
+import "../styles/Performance.css";
 
 function Performance() {
   const [performance, setPerformance] = useState({

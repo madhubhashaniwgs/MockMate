@@ -13,7 +13,7 @@ import {
   Send,
 } from "lucide-react";
 
-import "./MockInterview.css";
+import "../styles/MockInterview.css";
 
 function MockInterview() {
   const location = useLocation();

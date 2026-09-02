@@ -11,7 +11,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-import "./Register.css";
+import "../styles/Register.css";
 
 function Register() {
   const navigate = useNavigate();

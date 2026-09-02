@@ -11,7 +11,7 @@ import {
   Check,
 } from "lucide-react";
 
-import "./InterviewSetup.css";
+import "../styles/InterviewSetup.css";
 
 function InterviewSetup() {
   const navigate = useNavigate();

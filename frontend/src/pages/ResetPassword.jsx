@@ -8,7 +8,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-import "./ResetPassword.css";
+import "../styles/ResetPassword.css";
 
 function ResetPassword() {
   const navigate = useNavigate();

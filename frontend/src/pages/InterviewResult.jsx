@@ -13,7 +13,7 @@ import {
   Target,
 } from "lucide-react";
 
-import "./InterviewResult.css";
+import "../styles/InterviewResult.css";
 
 function InterviewResult() {
   const location = useLocation();

@@ -8,7 +8,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-import "./ForgotPassword.css";
+import "../styles/ForgotPassword.css";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");

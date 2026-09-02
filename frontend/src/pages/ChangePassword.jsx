@@ -12,7 +12,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-import "./ChangePassword.css";
+import "../styles/ChangePassword.css";
 
 function ChangePassword() {
   const navigate = useNavigate();

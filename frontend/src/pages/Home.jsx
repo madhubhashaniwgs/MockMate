@@ -10,7 +10,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-import "./Home.css";
+import "../styles/Home.css";
 
 import { Link } from "react-router-dom";
 
