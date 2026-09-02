@@ -2,11 +2,15 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const fs = require("fs");
 
 const pool = require("../config/database");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
+
+const multer = require("multer");
+const path = require("path");
 
 
 // ==========================================
@@ -132,7 +136,7 @@ router.post("/register", async (req, res) => {
     router.get("/profile", authMiddleware, async (req, res) => {
     try {
         const result = await pool.query(
-        "SELECT id, name, email, created_at FROM users WHERE id = $1",
+        "SELECT id, name, email, profile_image_path, created_at FROM users WHERE id = $1",
         [req.user.id]
         );
 
@@ -511,5 +515,155 @@ router.post("/register", async (req, res) => {
     }
   });
 
+
+    // ==========================================
+    // PROFILE IMAGE UPLOAD CONFIG
+    // ==========================================
+
+    const profileUploadDirectory = path.join(__dirname, "../uploads/profile");
+    fs.mkdirSync(profileUploadDirectory, { recursive: true });
+
+    const storage = multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, profileUploadDirectory);
+      },
+
+      filename: (req, file, cb) => {
+        const uniqueName =
+          Date.now() +
+          "-" +
+          Math.round(Math.random() * 1e9) +
+          path.extname(file.originalname);
+
+        cb(null, uniqueName);
+      },
+    });
+
+    const upload = multer({
+      storage,
+
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+
+      fileFilter: (req, file, cb) => {
+        const allowedTypes = [
+          "image/jpeg",
+          "image/jpg",
+          "image/png",
+          "image/webp",
+        ];
+
+        if (allowedTypes.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(
+            new Error(
+              "Only JPG, JPEG, PNG and WebP images are allowed."
+            )
+          );
+        }
+      },
+    });
+
+    const removeProfileImageFile = async (imagePath) => {
+      if (!imagePath) return;
+
+      const filePath = path.resolve(__dirname, "..", imagePath);
+      const uploadDirectory = path.resolve(profileUploadDirectory);
+
+      if (filePath.startsWith(`${uploadDirectory}${path.sep}`)) {
+        await fs.promises.unlink(filePath).catch(() => {});
+      }
+    };
+
+    router.post(
+      "/profile/image",
+      authMiddleware,
+      upload.single("profileImage"),
+      async (req, res) => {
+        try {
+          if (!req.file) {
+            return res.status(400).json({
+              success: false,
+              message: "Please select an image to upload.",
+            });
+          }
+
+          const previousUser = await pool.query(
+            "SELECT profile_image_path FROM users WHERE id = $1",
+            [req.user.id]
+          );
+          const previousImagePath = previousUser.rows[0]?.profile_image_path;
+          const imagePath = `/uploads/profile/${req.file.filename}`;
+
+          const result = await pool.query(
+            `UPDATE users
+             SET profile_image_path = $1
+             WHERE id = $2
+             RETURNING id, name, email, profile_image_path, created_at`,
+            [imagePath, req.user.id]
+          );
+
+          if (result.rows.length === 0) {
+            await removeProfileImageFile(imagePath);
+            return res.status(404).json({ message: "User not found." });
+          }
+
+          await removeProfileImageFile(previousImagePath);
+
+          return res.json({
+            success: true,
+            message: "Profile picture updated successfully.",
+            user: result.rows[0],
+          });
+        } catch (error) {
+          if (req.file) {
+            await removeProfileImageFile(`/uploads/profile/${req.file.filename}`);
+          }
+          console.error("Profile image upload error:", error);
+          return res.status(500).json({
+            success: false,
+            message: "Unable to upload profile picture.",
+          });
+        }
+      }
+    );
+
+    router.delete("/profile/image", authMiddleware, async (req, res) => {
+      try {
+        const existingUser = await pool.query(
+          "SELECT profile_image_path FROM users WHERE id = $1",
+          [req.user.id]
+        );
+        const existingImagePath = existingUser.rows[0]?.profile_image_path;
+
+        const result = await pool.query(
+          `UPDATE users
+           SET profile_image_path = NULL
+           WHERE id = $1
+           RETURNING id, name, email, profile_image_path, created_at`,
+          [req.user.id]
+        );
+
+        if (result.rows.length === 0) {
+          return res.status(404).json({ message: "User not found." });
+        }
+
+        await removeProfileImageFile(existingImagePath);
+
+        return res.json({
+          success: true,
+          message: "Profile picture removed successfully.",
+          user: result.rows[0],
+        });
+      } catch (error) {
+        console.error("Profile image removal error:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Unable to remove profile picture.",
+        });
+      }
+    });
 
   module.exports = router;

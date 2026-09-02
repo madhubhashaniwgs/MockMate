@@ -16,6 +16,9 @@ import { Link, useNavigate } from "react-router-dom";
 
 import "../styles/Dashboard.css";
 import { getInterviews } from "../services/interviewService";
+import { getProfile } from "../services/authService";
+
+const API_ORIGIN = "http://localhost:5000";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -24,11 +27,26 @@ function Dashboard() {
   // USER
   // ===============================
 
-  const [user] = useState(() => {
+  const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
 
     return savedUser ? JSON.parse(savedUser) : null;
   });
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) return;
+
+    getProfile(token)
+      .then((data) => {
+        setUser(data.user);
+        localStorage.setItem("user", JSON.stringify(data.user));
+      })
+      .catch((error) => {
+        console.error("Dashboard profile error:", error);
+      });
+  }, []);
 
   const userName = user?.name || "User";
   const userInitial = userName.charAt(0).toUpperCase();
@@ -227,7 +245,14 @@ function Dashboard() {
           className="dashboard-profile"
         >
           <div className="profile-avatar">
-            {userInitial}
+            {user?.profile_image_path ? (
+              <img
+                src={`${API_ORIGIN}${user.profile_image_path}`}
+                alt={`${userName} profile`}
+              />
+            ) : (
+              userInitial
+            )}
           </div>
 
           <div className="profile-info">

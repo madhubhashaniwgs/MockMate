@@ -15,6 +15,12 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/ai", aiRoutes);
+const path = require("path");
+
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
 
 
 app.get("/", async (req, res) => {
