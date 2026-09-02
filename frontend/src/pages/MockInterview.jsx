@@ -13,7 +13,12 @@ import {
   Send,
 } from "lucide-react";
 
-import "./MockInterview.css";
+import "../styles/MockInterview.css";
+import {
+  evaluateAnswer,
+  createInterview,
+  saveInterviewAnswer,
+} from "../services/interviewService";
 
 function MockInterview() {
   const location = useLocation();
@@ -36,21 +41,13 @@ function MockInterview() {
   // ==========================================
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
-
   const [answer, setAnswer] = useState("");
-
   const [answers, setAnswers] = useState([]);
-
   const [showFeedback, setShowFeedback] = useState(false);
-
   const [timeLeft, setTimeLeft] = useState(120);
-
   const [saving, setSaving] = useState(false);
-
   const [evaluating, setEvaluating] = useState(false);
-
   const [evaluationError, setEvaluationError] = useState("");
-
   const [currentEvaluation, setCurrentEvaluation] =
     useState(null);
 
@@ -161,41 +158,12 @@ function MockInterview() {
         );
       }
 
-      // ========================================
-      // SEND ANSWER TO BACKEND
-      // ========================================
-
-      const response = await fetch(
-        "http://localhost:5000/api/interviews/evaluate",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-
-          body: JSON.stringify({
-            question: currentQuestionData.question,
-            answer: answer.trim(),
-            jobRole,
-            difficulty,
-          }),
-        }
-      );
-
-      // ========================================
-      // READ RESPONSE
-      // ========================================
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Failed to evaluate your answer."
-        );
-      }
+      const data = await evaluateAnswer({
+        question: currentQuestionData.question,
+        answer: answer.trim(),
+        jobRole,
+        difficulty,
+      });
 
       // ========================================
       // GET AI EVALUATION
@@ -407,47 +375,13 @@ function MockInterview() {
         // ======================================
         // SAVE INTERVIEW
         // ======================================
-
-        const interviewResponse =
-          await fetch(
-            "http://localhost:5000/api/interviews",
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-
-                Authorization:
-                  `Bearer ${token}`,
-              },
-
-              body: JSON.stringify({
-                jobRole,
-
-                difficulty,
-
-                questionCount:
-                  questions.length,
-
-                score:
-                  finalScore,
-
-                status:
-                  "Completed",
-              }),
-            }
-          );
-
-        const savedInterview =
-          await interviewResponse.json();
-
-        if (!interviewResponse.ok) {
-          throw new Error(
-            savedInterview.message ||
-              "Failed to save interview."
-          );
-        }
+        const savedInterview = await createInterview({
+          jobRole,
+          difficulty,
+          questionCount: questions.length,
+          score: finalScore,
+          status: "Completed",
+        });
 
         // ======================================
         // GET INTERVIEW ID
@@ -467,51 +401,17 @@ function MockInterview() {
         // ======================================
 
         for (const item of updatedAnswers) {
-          const answerResponse =
-            await fetch(
-              `http://localhost:5000/api/interviews/${interviewId}/answers`,
-              {
-                method: "POST",
-
-                headers: {
-                  "Content-Type":
-                    "application/json",
-
-                  Authorization:
-                    `Bearer ${token}`,
-                },
-
-                body: JSON.stringify({
-                  question:
-                    item.question,
-
-                  answer:
-                    item.answer,
-
-                  score:
-                    item.score,
-
-                  feedback:
-                    item.feedback,
-
-                  strength:
-                    item.strength,
-
-                  improvement:
-                    item.improvement,
-                }),
-              }
-            );
-
-          const answerData =
-            await answerResponse.json();
-
-          if (!answerResponse.ok) {
-            throw new Error(
-              answerData.message ||
-                "Failed to save an interview answer."
-            );
-          }
+          await saveInterviewAnswer(
+            interviewId,
+            {
+              question: item.question,
+              answer: item.answer,
+              score: item.score,
+              feedback: item.feedback,
+              strength: item.strength,
+              improvement: item.improvement,
+            }
+          );
         }
 
         // ======================================
@@ -572,13 +472,9 @@ function MockInterview() {
     );
 
     setAnswer("");
-
     setShowFeedback(false);
-
     setCurrentEvaluation(null);
-
     setEvaluationError("");
-
     setTimeLeft(120);
   };
 

@@ -14,7 +14,8 @@ import {
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import "./Dashboard.css";
+import "../styles/Dashboard.css";
+import { getInterviews } from "../services/interviewService";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -47,41 +48,18 @@ function Dashboard() {
   useEffect(() => {
     const fetchInterviews = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const data = await getInterviews();
 
-        if (!token) {
-          setError("You are not authenticated.");
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch(
-          "http://localhost:5000/api/interviews",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to load interviews"
-          );
-        }
-
-        setInterviews(data.interviews || []);
-
+        setInterviews(data);
       } catch (error) {
         console.error(
           "Dashboard interview error:",
           error
         );
 
-        setError("Unable to load interview data.");
+        setError(
+          error.message || "Unable to load interview data."
+        );
       } finally {
         setLoading(false);
       }

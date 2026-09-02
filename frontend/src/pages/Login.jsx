@@ -8,7 +8,8 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import "./Login.css";
+import "../styles/Login.css";
+import { loginUser } from "../services/authService";
 
 function Login() {
   const navigate = useNavigate();
@@ -20,40 +21,22 @@ function Login() {
   const password = event.target.password.value;
 
   try {
-    const response = await fetch("http://localhost:5000/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    });
+    const data = await loginUser(email, password);
 
-    const data = await response.json();
+    console.log("Login successful:", data);
 
-        if (!response.ok) {
-          alert(data.message || "Invalid email or password.");
-          return;
-        }
+    localStorage.setItem("token", data.token);
 
-        console.log("Login successful:", data);
+    if (data.user) {
+      localStorage.setItem("user", JSON.stringify(data.user));
+    }
 
-        // Save JWT token
-        localStorage.setItem("token", data.token);
-
-        // Save user information if backend sends it
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-        }
-
-        navigate("/dashboard");
-      } catch (error) {
-        console.error("Login error:", error);
-        alert("Unable to connect to the server.");
-      }
-  };
+    navigate("/dashboard");
+  } catch (error) {
+    console.error("Login error:", error);
+    alert(error.message || "Unable to connect to the server.");
+  }
+};
 
   return (
     <div className="login-page">
