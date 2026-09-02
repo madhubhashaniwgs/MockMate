@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import "../styles/ForgotPassword.css";
+import { forgotPassword } from "../services/authService";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -17,45 +18,29 @@ function ForgotPassword() {
   const [error, setError] = useState("");
 
   const handleSubmit = async (event) => {
-    event.preventDefault();
+      event.preventDefault();
 
-    setLoading(true);
-    setMessage("");
-    setError("");
+      setLoading(true);
+      setMessage("");
+      setError("");
 
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/forgot-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-          }),
-        }
-      );
+      try {
+        const data = await forgotPassword(email);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || "Unable to process request.");
-        return;
+        setMessage(
+          data.message ||
+            "If an account exists with this email, a password reset link has been sent."
+        );
+      } catch (error) {
+        console.error("Forgot password error:", error);
+        setError(
+          error.message || "Unable to connect to the server."
+        );
+      } finally {
+        setLoading(false);
       }
-
-      setMessage(
-        data.message ||
-          "If an account exists with this email, a password reset link has been sent."
-      );
-    } catch (error) {
-      console.error("Forgot password error:", error);
-      setError("Unable to connect to the server.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+    };
+    
   return (
     <div className="forgot-page">
 

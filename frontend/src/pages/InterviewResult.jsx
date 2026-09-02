@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import "../styles/InterviewResult.css";
+import { getInterviewById } from "../services/interviewService";
 
 function InterviewResult() {
   const location = useLocation();
@@ -93,39 +94,9 @@ function InterviewResult() {
         setLoading(true);
         setError("");
 
-        const token =
-          localStorage.getItem("token");
+        const interview = await getInterviewById(interviewId);
 
-        if (!token) {
-          throw new Error(
-            "You are not authenticated."
-          );
-        }
-
-        const response = await fetch(
-          `http://localhost:5000/api/interviews/${interviewId}`,
-          {
-            method: "GET",
-
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data =
-          await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message ||
-              "Failed to load interview"
-          );
-        }
-
-        setSavedInterview(
-          data.interview
-        );
+            setSavedInterview(interview);
 
       } catch (error) {
         console.error(
