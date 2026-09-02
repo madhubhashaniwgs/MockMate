@@ -15,7 +15,11 @@ import {
   BriefcaseBusiness,
 } from "lucide-react";
 
-import "./Performance.css";
+import "../styles/Performance.css";
+import {
+  getInterviews,
+  getInterviewById,
+} from "../services/interviewService";
 
 function Performance() {
   const [performance, setPerformance] = useState({
@@ -30,133 +34,76 @@ function Performance() {
   // FETCH PERFORMANCE DATA
   // ==========================================
 
-  useEffect(() => {
-    const fetchPerformance = async () => {
-      try {
-        setLoading(true);
-        setError("");
+    useEffect(() => {
+      const fetchPerformance = async () => {
+        try {
+          setLoading(true);
+          setError("");
 
-        const token = localStorage.getItem("token");
+          const interviews = await getInterviews();
 
-        if (!token) {
-          throw new Error(
-            "You are not authenticated. Please login again."
+          console.log(
+            "Performance - interviews response:",
+            interviews
           );
-        }
 
-        // =====================================
-        // GET ALL INTERVIEWS
-        // =====================================
+          let allAnswers = [];
 
-        const response = await fetch(
-          "http://localhost:5000/api/interviews",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+          if (interviews.length > 0) {
+            const answerRequests = interviews.map(
+              async (interview) => {
+                try {
+                  const interviewData =
+                    await getInterviewById(interview.id);
 
-        const data = await response.json();
-
-        console.log(
-          "Performance - interviews response:",
-          data
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            data.message ||
-              "Failed to load interview data."
-          );
-        }
-
-        const interviews = Array.isArray(
-          data.interviews
-        )
-          ? data.interviews
-          : [];
-
-        // =====================================
-        // GET ANSWERS FROM EACH INTERVIEW
-        // =====================================
-
-        let allAnswers = [];
-
-        if (interviews.length > 0) {
-          const answerRequests =
-            interviews.map(async (interview) => {
-              try {
-                const answerResponse =
-                  await fetch(
-                    `http://localhost:5000/api/interviews/${interview.id}`,
-                    {
-                      method: "GET",
-                      headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type":
-                          "application/json",
-                      },
-                    }
+                  return Array.isArray(
+                    interviewData?.answers
+                  )
+                    ? interviewData.answers
+                    : [];
+                } catch (err) {
+                  console.error(
+                    `Failed to load answers for interview ${interview.id}:`,
+                    err
                   );
 
-                if (!answerResponse.ok) {
                   return [];
                 }
-
-                const answerData =
-                  await answerResponse.json();
-
-                return Array.isArray(
-                  answerData?.interview?.answers
-                )
-                  ? answerData.interview.answers
-                  : [];
-              } catch (err) {
-                console.error(
-                  `Failed to load answers for interview ${interview.id}:`,
-                  err
-                );
-
-                return [];
               }
-            });
+            );
 
-          const answerResults =
-            await Promise.all(answerRequests);
+            const answerResults =
+              await Promise.all(answerRequests);
 
-          allAnswers =
-            answerResults.flat();
+            allAnswers = answerResults.flat();
+          }
+
+          console.log(
+            "Performance - all answers:",
+            allAnswers
+          );
+
+          setPerformance({
+            interviews,
+            answers: allAnswers,
+          });
+        } catch (err) {
+          console.error(
+            "Performance loading error:",
+            err
+          );
+
+          setError(
+            err.message ||
+              "Unable to load performance data."
+          );
+        } finally {
+          setLoading(false);
         }
+      };
 
-        console.log(
-          "Performance - all answers:",
-          allAnswers
-        );
-
-        setPerformance({
-          interviews,
-          answers: allAnswers,
-        });
-      } catch (err) {
-        console.error(
-          "Performance loading error:",
-          err
-        );
-
-        setError(
-          err.message ||
-            "Unable to load performance data."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPerformance();
-  }, []);
+      fetchPerformance();
+    }, []);
 
   // ==========================================
   // PERFORMANCE LEVEL

@@ -11,7 +11,10 @@ import {
   Check,
 } from "lucide-react";
 
-import "./InterviewSetup.css";
+import "../styles/InterviewSetup.css";
+import {
+  generateInterviewQuestions,
+} from "../services/interviewService";
 
 function InterviewSetup() {
   const navigate = useNavigate();
@@ -57,63 +60,13 @@ function InterviewSetup() {
       try {
         setGenerating(true);
 
-        const token = localStorage.getItem("token");
-      
+        const data = await generateInterviewQuestions({
+          jobRole,
+          difficulty,
+          questionCount,
+        });
 
-        if (!token) {
-          throw new Error(
-            "You are not authenticated. Please login again."
-          );
-        }
-
-        const response = await fetch(
-          "http://localhost:5000/api/ai/generate-questions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              jobRole,
-              difficulty,
-              questionCount,
-            }),
-          }
-        );
-
-        const responseText = await response.text();
-
-
-        let data;
-
-        try {
-          data = JSON.parse(responseText);
-        } catch (error) {
-          console.error("Response is not JSON:", responseText);
-
-          throw new Error(
-            "Server returned an invalid response. Check the API URL."
-          );
-        }
-
-        if (!response.ok) {
-          throw new Error(
-            data.message ||
-            "Failed to generate interview questions"
-          );
-        }
-
-        if (!data.questions || !Array.isArray(data.questions)) {
-          throw new Error(
-            "Invalid questions received from AI."
-          );
-        }
-
-        console.log(
-          "Generated questions:",
-          data.questions
-        );
+        console.log("Generated questions:", data.questions);
 
         navigate("/mock-interview", {
           state: {
@@ -123,18 +76,13 @@ function InterviewSetup() {
             questions: data.questions,
           },
         });
-
       } catch (error) {
-        console.error(
-          "Question generation error:",
-          error
-        );
+        console.error("Question generation error:", error);
 
         alert(
           error.message ||
-          "Failed to generate interview questions."
+            "Failed to generate interview questions."
         );
-
       } finally {
         setGenerating(false);
       }

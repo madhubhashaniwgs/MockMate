@@ -11,7 +11,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-import "./Register.css";
+import "../styles/Register.css";
+import { registerUser } from "../services/authService";
 
 function Register() {
   const navigate = useNavigate();
@@ -65,24 +66,11 @@ function Register() {
       }
 
       try {
-        const response = await fetch("http://localhost:5000/api/auth/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-          }),
+        const data = await registerUser({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          setError(data.message || "Registration failed.");
-          return;
-        }
 
         console.log("Registration successful:", data);
 

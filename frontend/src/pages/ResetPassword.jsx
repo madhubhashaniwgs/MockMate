@@ -8,7 +8,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-import "./ResetPassword.css";
+import "../styles/ResetPassword.css";
+import { resetPassword } from "../services/authService";
 
 function ResetPassword() {
   const navigate = useNavigate();
@@ -49,28 +50,11 @@ function ResetPassword() {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        "http://localhost:5000/api/auth/reset-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            token,
-            newPassword,
-            confirmPassword,
-          }),
-        }
+      await resetPassword(
+        token,
+        newPassword,
+        confirmPassword
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Password reset failed."
-        );
-      }
 
       setMessage(
         "Password reset successfully. You can now login."

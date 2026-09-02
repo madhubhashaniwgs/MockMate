@@ -12,7 +12,8 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-import "./ChangePassword.css";
+import "../styles/ChangePassword.css";
+import { changePassword } from "../services/authService";
 
 function ChangePassword() {
   const navigate = useNavigate();
@@ -69,34 +70,7 @@ function ChangePassword() {
     try {
       setLoading(true);
 
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        setError("You are not authenticated. Please login again.");
-        return;
-      }
-
-      const response = await fetch(
-        "http://localhost:5000/api/auth/change-password",
-        {
-          method: "PUT",
-
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-
-          body: JSON.stringify(formData),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to change password."
-        );
-      }
+      await changePassword(formData);
 
       setMessage("Password changed successfully.");
 

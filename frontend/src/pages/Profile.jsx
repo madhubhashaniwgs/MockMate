@@ -17,39 +17,30 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import "./Profile.css";
+import "../styles/Profile.css";
+import {
+  getProfile,
+  updateProfile,
+} from "../services/authService";
 
 function Profile() {
-  // ===============================
+  
   // USER STATE
-  // ===============================
-
   const [user, setUser] = useState(null);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
 
-  // ===============================
   // EDIT STATE
-  // ===============================
 
   const [isEditing, setIsEditing] = useState(false);
-
   const [editName, setEditName] = useState("");
-
   const [editEmail, setEditEmail] = useState("");
-
   const [saving, setSaving] = useState(false);
-
   const [saveMessage, setSaveMessage] = useState("");
-
   const [saveError, setSaveError] = useState("");
 
 
-  // ===============================
   // FETCH PROFILE
-  // ===============================
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -62,24 +53,7 @@ function Profile() {
           return;
         }
 
-        const response = await fetch(
-          "http://localhost:5000/api/auth/profile",
-          {
-            method: "GET",
-
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to load profile."
-          );
-        }
+        const data = await getProfile(token);
 
         // Save latest user data
         setUser(data.user);
@@ -116,13 +90,9 @@ function Profile() {
 
   const handleEdit = () => {
     setEditName(user.name || "");
-
     setEditEmail(user.email || "");
-
     setSaveMessage("");
-
     setSaveError("");
-
     setIsEditing(true);
   };
 
@@ -133,13 +103,9 @@ function Profile() {
 
   const handleCancel = () => {
     setEditName(user.name || "");
-
     setEditEmail(user.email || "");
-
     setSaveMessage("");
-
     setSaveError("");
-
     setIsEditing(false);
   };
 
@@ -150,13 +116,10 @@ function Profile() {
 
   const handleSave = async (event) => {
     event.preventDefault();
-
     setSaveMessage("");
-
-    setSaveError("");
+     setSaveError("");
 
     const name = editName.trim();
-
     const email = editEmail.trim().toLowerCase();
 
     // Validate name
@@ -194,31 +157,10 @@ function Profile() {
         return;
       }
 
-      const response = await fetch(
-        "http://localhost:5000/api/auth/profile",
-        {
-          method: "PUT",
-
-          headers: {
-            "Content-Type": "application/json",
-
-            Authorization: `Bearer ${token}`,
-          },
-
-          body: JSON.stringify({
-            name,
-            email,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to update profile."
-        );
-      }
+      const data = await updateProfile(token, {
+        name,
+        email,
+      });
 
       // Update state with backend data
       setUser(data.user);

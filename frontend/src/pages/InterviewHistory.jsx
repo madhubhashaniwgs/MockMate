@@ -12,7 +12,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-import "./InterviewHistory.css";
+import "../styles/InterviewHistory.css";
+import { getInterviews } from "../services/interviewService";
 
 function InterviewHistory() {
   
@@ -23,54 +24,38 @@ function InterviewHistory() {
       useEffect(() => {
         const fetchInterviews = async () => {
           try {
-            const token = localStorage.getItem("token");
+            setLoading(true);
+            setError("");
 
-            if (!token) {
-              setError("You are not authenticated.");
-              setLoading(false);
-              return;
-            }
-
-            const response = await fetch(
-              "http://localhost:5000/api/interviews",
-              {
-                method: "GET",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-              setError(data.message || "Failed to load interview history.");
-              setLoading(false);
-              return;
-            }
+            const data = await getInterviews();
 
             setInterviews(
-            (data.interviews || []).map((interview) => ({
-              id: interview.id,
-              role: interview.job_role,
-              difficulty: interview.difficulty,
-              date: new Date(interview.created_at).toLocaleDateString(
-                "en-US",
-                {
+              data.map((interview) => ({
+                id: interview.id,
+                role: interview.job_role,
+                difficulty: interview.difficulty,
+                date: new Date(
+                  interview.created_at
+                ).toLocaleDateString("en-US", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
-                }
-              ),
-              score: interview.score ?? 0,
-              questions: interview.question_count,
-              status: interview.status,
-            }))
-          );
-
+                }),
+                score: interview.score ?? 0,
+                questions: interview.question_count,
+                status: interview.status,
+              }))
+            );
           } catch (error) {
-            console.error("Interview history error:", error);
-            setError("Unable to connect to the server.");
+            console.error(
+              "Interview history error:",
+              error
+            );
+
+            setError(
+              error.message ||
+                "Unable to connect to the server."
+            );
           } finally {
             setLoading(false);
           }

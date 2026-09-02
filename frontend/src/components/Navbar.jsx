@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Brain } from "lucide-react";
-import "./Navbar.css";
+import "../styles/Navbar.css";
 
 function Navbar() {
   return (
