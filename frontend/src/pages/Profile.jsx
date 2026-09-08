@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  Brain,
   User,
   Mail,
   BriefcaseBusiness,
@@ -285,8 +284,6 @@ function Profile() {
             <span>MockMate</span>
           </Link>
 
-          <div className="profile-header-space"></div>
-
         </header>
 
 
@@ -342,8 +339,6 @@ function Profile() {
             <img src={logo} alt="MockMate" />
             <span>MockMate</span>
           </Link>
-
-          <div className="profile-header-space"></div>
 
         </header>
 
@@ -443,9 +438,6 @@ function Profile() {
             <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>
-
-
-        <div className="profile-header-space"></div>
 
       </header>
 

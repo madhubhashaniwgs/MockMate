@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo1.png";
 import {
-  Brain,
   Mail,
   ArrowLeft,
   Send,

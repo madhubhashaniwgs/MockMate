@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo1.png";
 import {
-  Brain,
   User,
   Mail,
   Lock,

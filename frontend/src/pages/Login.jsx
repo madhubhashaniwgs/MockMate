@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 import {
-  Brain,
   Mail,
   Lock,
   LogIn,
@@ -11,9 +11,11 @@ import {
 import "../styles/Login.css";
 import { loginUser } from "../services/authService";
 import logo1 from "../assets/logo1.png";
+import AlertPopup from "../components/AlertPopup";
 
 function Login() {
   const navigate = useNavigate();
+  const [alertMessage, setAlertMessage] = useState("");
 
   const handleLogin = async (event) => {
   event.preventDefault();
@@ -35,12 +37,17 @@ function Login() {
     navigate("/dashboard");
   } catch (error) {
     console.error("Login error:", error);
-    alert(error.message || "Unable to connect to the server.");
+    setAlertMessage(error.message || "Unable to connect to the server.");
   }
 };
 
   return (
     <div className="login-page">
+
+      <AlertPopup
+        message={alertMessage}
+        onClose={() => setAlertMessage("")}
+      />
 
       {/* Left Side */}
 

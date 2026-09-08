@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/logo1.png";
 
 import {
-  Brain,
   Trophy,
   ArrowLeft,
   RotateCcw,
@@ -117,7 +116,7 @@ function InterviewResult() {
 
     fetchInterview();
 
-  }, [interviewId]);
+  }, [interviewId, interviewData.answers?.length]);
 
   // ===============================
   // CURRENT INTERVIEW DATA
@@ -328,21 +327,16 @@ function InterviewResult() {
 
         <Link
           to="/dashboard"
-          className="result-logo"
+          className="result-dashboard-link"
         >
-          <img src={logo} alt="MockMate" />
-
-          <span>
-            MockMate
-          </span>
+          <ArrowLeft size={17} />
+          Back to Dashboard
 
         </Link>
 
-        <Link
-          to="/dashboard"
-          className="result-dashboard-link"
-        >
-          Back to Dashboard
+        <Link to="/" className="result-logo">
+          <img src={logo} alt="MockMate" />
+          <span>MockMate</span>
         </Link>
 
       </header>

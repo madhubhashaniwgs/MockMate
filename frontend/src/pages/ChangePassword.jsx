@@ -1,5 +1,4 @@
 import {
-  Brain,
   ArrowLeft,
   Lock,
   Eye,

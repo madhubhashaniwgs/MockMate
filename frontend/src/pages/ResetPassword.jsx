@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import logo from "../assets/logo1.png";
 
 import {
-  Brain,
   Lock,
   KeyRound,
   CheckCircle,
