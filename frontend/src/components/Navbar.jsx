@@ -6,10 +6,10 @@ function Navbar() {
   return (
     <nav className="navbar">
 
-      <div className="logo">
+      <Link to="/" className="logo" aria-label="MockMate home">
         <img src={logo} alt="MockMate" />
         <span>MockMate</span>
-      </div>
+      </Link>
 
 
       <div className="nav-links">

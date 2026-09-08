@@ -19,25 +19,25 @@ function Home() {
     {
       icon: <Brain />,
       title: "AI Mock Interviews",
-      desc: "Practice realistic technical and behavioral interviews with an AI-powered interviewer.",
+      desc: "Choose a job role and difficulty, then practice realistic technical questions with an AI interviewer.",
     },
 
     {
       icon: <MessageSquare />,
       title: "Smart AI Feedback",
-      desc: "Get detailed feedback about your answers, communication, confidence and interview performance.",
+      desc: "Receive a score, strengths, improvement areas and constructive feedback for every answer.",
     },
 
     {
       icon: <BarChart3 />,
       title: "Performance Tracking",
-      desc: "Track your interview scores, identify weaknesses and monitor your improvement over time.",
+      desc: "Review average scores, best scores, performance trends and score distribution over time.",
     },
 
     {
       icon: <History />,
       title: "Interview History",
-      desc: "Review your previous interviews, scores and personalized feedback whenever you need.",
+      desc: "Review completed interview attempts, job roles, difficulty levels, dates and scores.",
     },
   ];
 
@@ -68,7 +68,7 @@ function Home() {
 
           <p>
             Prepare smarter with AI-powered mock interviews,
-            personalized feedback and intelligent career guidance.
+            personalized answer feedback and performance tracking.
           </p>
 
 
@@ -114,7 +114,7 @@ function Home() {
           </h2>
 
           <p className="card-description">
-            Your personal AI assistant for interview success.
+            Practice text-based interviews and improve with personalized AI feedback.
           </p>
 
 
@@ -151,7 +151,7 @@ function Home() {
               <div className="score">
 
                 <span>
-                  Communication
+                  Overall Score
                 </span>
 
                 <strong>
@@ -168,7 +168,7 @@ function Home() {
               <div className="score">
 
                 <span>
-                  Confidence
+                  Strengths
                 </span>
 
                 <strong>
@@ -185,7 +185,7 @@ function Home() {
               <div className="score">
 
                 <span>
-                  Answer Quality
+                  Improvements
                 </span>
 
                 <strong>
@@ -209,22 +209,22 @@ function Home() {
 
             <div>
               <h3>
-                AI Powered
+                Text-Based
               </h3>
 
               <p>
-                Evaluation
+                Interviews
               </p>
             </div>
 
 
             <div>
               <h3>
-                24/7
+                Timed
               </h3>
 
               <p>
-                Practice
+                Questions
               </p>
             </div>
 
