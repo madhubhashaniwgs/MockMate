@@ -259,11 +259,11 @@ to provide users with a complete career preparation experience.
 ### Dashboard
 <img src="screenshots/dashboard.png" width="800">
 
-### Interview
-<img src="screenshots/interview.png" width="800">
-
 ### Interview Setup
 <img src="screenshots/interview-setup.png" width="800">
+
+### Interview
+<img src="screenshots/interview.png" width="800">
 
 ### Interview Result
 <img src="screenshots/interview-result.png" width="800">
