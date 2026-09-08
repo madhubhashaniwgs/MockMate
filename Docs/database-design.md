@@ -1,15 +1,16 @@
 # Database Design
 
+This document separates database structures used by the current MVP from planned structures.
+
 ## Users Table
 
 Stores user account information.
 
 Fields:
 - id
-- full_name
+- name
 - email
 - password
-- career_goal
 - profile_image_path
 - created_at
 
@@ -20,19 +21,6 @@ ALTER TABLE users ADD COLUMN profile_image_path TEXT;
 ```
 
 
-## Resumes Table
-
-Stores uploaded resume details.
-
-Fields:
-- id
-- user_id
-- file_name
-- file_path
-- extracted_text
-- created_at
-
-
 ## Interviews Table
 
 Stores interview sessions.
@@ -40,19 +28,25 @@ Stores interview sessions.
 Fields:
 - id
 - user_id
-- role
+- job_role
+- difficulty
+- question_count
 - score
-- feedback
 - created_at
+- status
 
 
-## Career Roadmaps Table
+## Interview Answers Table
 
-Stores generated career plans.
+Stores evaluated answers belonging to an interview.
 
 Fields:
 - id
-- user_id
-- goal
-- roadmap_content
+- interview_id
+- question
+- answer
+- score
+- feedback
+- strength
+- improvement
 - created_at
