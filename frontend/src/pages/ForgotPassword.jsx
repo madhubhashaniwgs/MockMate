@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import logo from "../assets/logo1.png";
 import {
-  Brain,
   Mail,
   ArrowLeft,
   Send,
@@ -49,7 +49,7 @@ function ForgotPassword() {
       <header className="forgot-header">
 
         <Link to="/" className="forgot-logo">
-          <Brain size={28} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>
 

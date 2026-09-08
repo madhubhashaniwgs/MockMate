@@ -162,7 +162,8 @@ export const generateInterviewQuestions = async ({
     console.error("Response is not JSON:", responseText);
 
     throw new Error(
-      "Server returned an invalid response. Check the API URL."
+      "Server returned an invalid response. Check the API URL.",
+      { cause: error }
     );
   }
 

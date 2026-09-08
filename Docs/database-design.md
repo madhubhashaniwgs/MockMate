@@ -10,7 +10,14 @@ Fields:
 - email
 - password
 - career_goal
+- profile_image_path
 - created_at
+
+To add this field to an existing database:
+
+```sql
+ALTER TABLE users ADD COLUMN profile_image_path TEXT;
+```
 
 
 ## Resumes Table

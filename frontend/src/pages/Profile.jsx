@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  Brain,
   User,
   Mail,
   BriefcaseBusiness,
@@ -12,16 +11,23 @@ import {
   Pencil,
   Save,
   X,
+  Camera,
+  Trash2,
 } from "lucide-react";
+import logo from "../assets/logo1.png";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import "../styles/Profile.css";
 import {
   getProfile,
   updateProfile,
+  uploadProfileImage,
+  removeProfileImage,
 } from "../services/authService";
+
+const API_ORIGIN = "http://localhost:5000";
 
 function Profile() {
   
@@ -38,6 +44,9 @@ function Profile() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState("");
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageError, setImageError] = useState("");
+  const fileInputRef = useRef(null);
 
 
   // FETCH PROFILE
@@ -199,6 +208,55 @@ function Profile() {
     }
   };
 
+  const updateStoredUser = (nextUser) => {
+    setUser(nextUser);
+    localStorage.setItem("user", JSON.stringify(nextUser));
+  };
+
+  const handleImageChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    setImageError("");
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setImageError("Please select a JPG, PNG, or WebP image.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError("Profile pictures must be smaller than 5 MB.");
+      return;
+    }
+
+    try {
+      setImageUploading(true);
+      const token = localStorage.getItem("token");
+      const data = await uploadProfileImage(token, file);
+      updateStoredUser(data.user);
+    } catch (error) {
+      setImageError(error.message || "Unable to upload profile picture.");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    setImageError("");
+
+    try {
+      setImageUploading(true);
+      const token = localStorage.getItem("token");
+      const data = await removeProfileImage(token);
+      updateStoredUser(data.user);
+    } catch (error) {
+      setImageError(error.message || "Unable to remove profile picture.");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
 
   // ===============================
   // LOADING STATE
@@ -222,11 +280,9 @@ function Profile() {
             to="/"
             className="profile-logo"
           >
-            <Brain size={25} />
+            <img src={logo} alt="MockMate" />
             <span>MockMate</span>
           </Link>
-
-          <div className="profile-header-space"></div>
 
         </header>
 
@@ -280,11 +336,9 @@ function Profile() {
             to="/"
             className="profile-logo"
           >
-            <Brain size={25} />
+            <img src={logo} alt="MockMate" />
             <span>MockMate</span>
           </Link>
-
-          <div className="profile-header-space"></div>
 
         </header>
 
@@ -381,12 +435,9 @@ function Profile() {
           to="/"
           className="profile-logo"
         >
-          <Brain size={25} />
+            <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>
-
-
-        <div className="profile-header-space"></div>
 
       </header>
 
@@ -433,8 +484,47 @@ function Profile() {
 
           <div className="profile-card-top">
 
-            <div className="profile-large-avatar">
-              {userInitial}
+            <div className="profile-avatar-area">
+              <div className="profile-large-avatar">
+                {user.profile_image_path ? (
+                  <img
+                    src={`${API_ORIGIN}${user.profile_image_path}`}
+                    alt={`${userName} profile`}
+                  />
+                ) : (
+                  userInitial
+                )}
+              </div>
+
+              <div className="profile-image-actions">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="profile-file-input"
+                  onChange={handleImageChange}
+                />
+                <button
+                  type="button"
+                  className="profile-image-button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={imageUploading}
+                >
+                  <Camera size={14} />
+                  {user.profile_image_path ? "Change" : "Add photo"}
+                </button>
+                {user.profile_image_path && (
+                  <button
+                    type="button"
+                    className="profile-image-remove"
+                    onClick={handleRemoveImage}
+                    disabled={imageUploading}
+                    title="Remove profile picture"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
             </div>
 
 
@@ -486,6 +576,10 @@ function Profile() {
             <div className="profile-save-error">
               {saveError}
             </div>
+          )}
+
+          {imageError && (
+            <div className="profile-save-error">{imageError}</div>
           )}
 
 
