@@ -6,7 +6,7 @@ const fs = require("fs");
 
 const pool = require("../config/database");
 const authMiddleware = require("../middleware/authMiddleware");
-
+const { sendPasswordResetEmail } = require("../utils/emailService");
 const router = express.Router();
 
 const multer = require("multer");
@@ -159,84 +159,75 @@ router.post("/register", async (req, res) => {
     }
     });
 
-    // ==========================================
-    // FORGOT PASSWORD
-    // ==========================================
+  // ==========================================
+  // FORGOT PASSWORD
+  // ==========================================
 
-    router.post("/forgot-password", async (req, res) => {
+  router.post("/forgot-password", async (req, res) => {
     try {
-        const { email } = req.body;
+      const { email } = req.body;
 
-        if (!email) {
+      if (!email) {
         return res.status(400).json({
-            success: false,
-            message: "Email address is required.",
+          success: false,
+          message: "Email address is required.",
         });
-        }
+      }
 
-        // Find user
-        const result = await pool.query(
+      const result = await pool.query(
         "SELECT id, email FROM users WHERE email = $1",
         [email]
-        );
+      );
 
-        // Don't reveal whether email exists
-        if (result.rows.length === 0) {
+      // Don't reveal whether the account exists
+      if (result.rows.length === 0) {
         return res.status(200).json({
-            success: true,
-            message:
-            "If an account exists with this email, a password reset link has been generated.",
+          success: true,
+          message:
+            "If an account exists with this email, a password reset link has been sent.",
         });
-        }
+      }
 
-        const user = result.rows[0];
+      const user = result.rows[0];
 
-        // Generate secure token
-        const resetToken = crypto.randomBytes(32).toString("hex");
+      // Generate secure token
+      const resetToken = crypto.randomBytes(32).toString("hex");
 
-        // Token valid for 15 minutes
-        const expiresAt = new Date(
+      // Token expires after 15 minutes
+      const expiresAt = new Date(
         Date.now() + 15 * 60 * 1000
-        );
+      );
 
-        // Save token in password_reset_tokens table
-        await pool.query(
+      // Save token
+      await pool.query(
         `INSERT INTO password_reset_tokens
         (user_id, token, expires_at)
         VALUES ($1, $2, $3)`,
         [user.id, resetToken, expiresAt]
-        );
+      );
 
-        // Development purpose
-        console.log("=================================");
-        console.log("PASSWORD RESET TOKEN");
-        console.log(resetToken);
-        console.log("RESET URL:");
-        console.log(
-        `http://localhost:5173/reset-password?token=${resetToken}`
-        );
-        console.log("=================================");
+      // Send email
+      await sendPasswordResetEmail(
+        user.email,
+        resetToken
+      );
 
-        return res.status(200).json({
+      return res.status(200).json({
         success: true,
         message:
-            "Password reset link generated successfully.",
-        resetToken,
-        });
+          "If an account exists with this email, a password reset link has been sent.",
+      });
 
     } catch (error) {
-        console.error(
-        "Forgot password error:",
-        error
-        );
+      console.error("Forgot password error:", error);
 
-        return res.status(500).json({
+      return res.status(500).json({
         success: false,
         message:
-            "Server error while processing password reset.",
-        });
+          "Unable to send password reset email. Please try again later.",
+      });
     }
-    });
+  });
     // ==========================================
     // RESET PASSWORD
     // ==========================================
