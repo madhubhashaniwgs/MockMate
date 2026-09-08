@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import logo from "../assets/logo1.png";
 
 import {
   Brain,
@@ -329,7 +330,7 @@ function InterviewResult() {
           to="/dashboard"
           className="result-logo"
         >
-          <Brain size={25} />
+          <img src={logo} alt="MockMate" />
 
           <span>
             MockMate

@@ -15,6 +15,7 @@ import {
   Camera,
   Trash2,
 } from "lucide-react";
+import logo from "../assets/logo1.png";
 
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -280,7 +281,7 @@ function Profile() {
             to="/"
             className="profile-logo"
           >
-            <Brain size={25} />
+            <img src={logo} alt="MockMate" />
             <span>MockMate</span>
           </Link>
 
@@ -338,7 +339,7 @@ function Profile() {
             to="/"
             className="profile-logo"
           >
-            <Brain size={25} />
+            <img src={logo} alt="MockMate" />
             <span>MockMate</span>
           </Link>
 
@@ -439,7 +440,7 @@ function Profile() {
           to="/"
           className="profile-logo"
         >
-          <Brain size={25} />
+            <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>
 

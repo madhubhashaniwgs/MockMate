@@ -75,6 +75,12 @@
   color: #38bdf8;
 }
 
+.setup-logo img {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+}
+
 
 /* =========================================================
    MAIN CONTAINER

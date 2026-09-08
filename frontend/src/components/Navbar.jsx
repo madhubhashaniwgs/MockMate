@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Brain } from "lucide-react";
+import logo from "../assets/logo1.png";
 import "../styles/Navbar.css";
 
 function Navbar() {
@@ -7,7 +7,7 @@ function Navbar() {
     <nav className="navbar">
 
       <div className="logo">
-        <Brain size={32}/>
+        <img src={logo} alt="MockMate" />
         <span>MockMate</span>
       </div>
 

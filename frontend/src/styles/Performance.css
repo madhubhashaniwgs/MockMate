@@ -59,6 +59,18 @@
   color: #38bdf8;
 }
 
+.performance-logo img {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+}
+
+.performance-back-link img {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+}
+
 .performance-history-link,
 .performance-dashboard-link {
   color: #94a3b8;

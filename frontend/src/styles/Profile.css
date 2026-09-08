@@ -57,6 +57,12 @@
   color: #38bdf8;
 }
 
+.profile-logo img {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+}
+
 .profile-header-space {
   width: 120px;
 }

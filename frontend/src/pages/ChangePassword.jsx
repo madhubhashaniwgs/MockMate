@@ -11,6 +11,7 @@ import {
 
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import logo from "../assets/logo1.png";
 
 import "../styles/ChangePassword.css";
 import { changePassword } from "../services/authService";
@@ -114,7 +115,7 @@ function ChangePassword() {
           to="/"
           className="change-password-logo"
         >
-          <Brain size={25} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>
 

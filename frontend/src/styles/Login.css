@@ -60,6 +60,12 @@
   color: #38bdf8;
 }
 
+.login-logo img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
 
 /* Brand Content */
 

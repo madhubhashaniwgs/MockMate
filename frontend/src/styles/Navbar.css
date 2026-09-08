@@ -46,6 +46,12 @@
   color: #38bdf8;
 }
 
+.logo img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
 
 /* Navigation Links */
 
@@ -141,6 +147,11 @@
   .logo svg {
     width: 27px;
 
+    height: 27px;
+  }
+
+  .logo img {
+    width: 27px;
     height: 27px;
   }
 

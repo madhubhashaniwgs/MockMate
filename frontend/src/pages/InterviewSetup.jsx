@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import logo from "../assets/logo1.png";
 
 import {
   ArrowLeft,
@@ -101,7 +102,7 @@ function InterviewSetup() {
         </Link>
 
         <Link to="/" className="setup-logo">
-          <Brain size={25} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>
 

@@ -10,6 +10,7 @@ import {
 
 import "../styles/Login.css";
 import { loginUser } from "../services/authService";
+import logo1 from "../assets/logo1.png";
 
 function Login() {
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ function Login() {
       <section className="login-brand-section">
 
         <Link to="/" className="login-logo">
-          <Brain size={30} />
+          <img src={logo1} alt="MockMate Logo"  className="logo" />
           <span>MockMate</span>
         </Link>
 

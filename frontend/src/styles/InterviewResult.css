@@ -36,6 +36,12 @@
   color: #38bdf8;
 }
 
+.result-logo img {
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+}
+
 .result-dashboard-link {
   color: #94a3b8;
   font-size: 14px;

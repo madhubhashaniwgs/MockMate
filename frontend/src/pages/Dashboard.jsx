@@ -1,5 +1,4 @@
 import {
-  Brain,
   LayoutDashboard,
   MessageSquare,
   History,
@@ -13,7 +12,7 @@ import {
 
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
+import logo from "../assets/logo1.png";
 import "../styles/Dashboard.css";
 import { getInterviews } from "../services/interviewService";
 import { getProfile } from "../services/authService";
@@ -159,7 +158,7 @@ function Dashboard() {
       <aside className="dashboard-sidebar">
 
         <Link to="/" className="dashboard-logo">
-          <Brain size={29} />
+          <img src={logo} alt="MockMate" className="logo" />
           <span>MockMate</span>
         </Link>
 
@@ -279,7 +278,7 @@ function Dashboard() {
           <div className="welcome-content">
 
             <div className="welcome-badge">
-              <Brain size={15} />
+              <img src={logo} alt="MockMate" className="logo" />
               AI Mock Interview
             </div>
 
@@ -304,7 +303,7 @@ function Dashboard() {
           </div>
 
           <div className="welcome-icon">
-            <Brain size={85} />
+            <img src={logo} alt="MockMate Logo"  className="logo" />
           </div>
 
         </section>

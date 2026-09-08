@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import logo from "../assets/logo1.png";
 
 import {
   ArrowLeft,
@@ -405,7 +406,7 @@ function Performance() {
 
 
         <Link to="/" className="performance-logo">
-          <Brain size={25} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>  
 
@@ -446,7 +447,7 @@ function Performance() {
             to="/dashboard"
             className="performance-back-link"
           >
-            <Brain size={25} />
+            <img src={logo} alt="MockMate" />
             <span>MockMate</span>
           </Link>
 
@@ -502,7 +503,7 @@ function Performance() {
 
 
         <Link to="/" className="performance-logo">
-          <Brain size={25} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>  
 
@@ -589,7 +590,7 @@ function Performance() {
         </Link>
 
         <Link to="/" className="performance-logo">
-          <Brain size={25} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>  
 
