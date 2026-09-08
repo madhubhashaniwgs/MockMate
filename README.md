@@ -244,3 +244,34 @@ to provide users with a complete career preparation experience.
 ## Author
 
 **Madhubhashani WGS**
+
+## Screenshots
+
+### Home
+<img src="screenshots/home.png" width="800">
+
+### Login
+<img src="screenshots/login.png" width="800">
+
+### Register
+<img src="screenshots/register.png" width="800">
+
+### Dashboard
+<img src="screenshots/dashboard.png" width="800">
+
+### Interview
+<img src="screenshots/interview.png" width="800">
+
+### Interview Setup
+<img src="screenshots/interview-setup.png" width="800">
+
+### Interview Result
+<img src="screenshots/interview-result.png" width="800">
+
+### Interview History
+<img src="screenshots/interview-history.png" width="800">
+
+### Performance
+<img src="screenshots/performance.png" width="800">
+
+

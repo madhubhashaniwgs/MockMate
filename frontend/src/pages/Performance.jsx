@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import logo from "../assets/logo1.png";
 
 import {
   ArrowLeft,
@@ -8,7 +9,6 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock3,
-  Target,
   TrendingUp,
   Trophy,
   AlertCircle,
@@ -187,17 +187,8 @@ function Performance() {
   // BASIC DATA
   // ==========================================
 
-  const interviews = Array.isArray(
-    performance.interviews
-  )
-    ? performance.interviews
-    : [];
-
-  const answers = Array.isArray(
-    performance.answers
-  )
-    ? performance.answers
-    : [];
+  const interviews = performance.interviews;
+  const answers = performance.answers;
 
   // ==========================================
   // STATISTICS
@@ -206,9 +197,11 @@ function Performance() {
   const totalInterviews = interviews.length;
 
   const scoredInterviews = interviews.filter(
-    (interview) =>
-      interview.score !== null &&
-      interview.score !== undefined
+    (interview) => {
+      const score = Number(interview.score);
+
+      return Number.isFinite(score);
+    }
   );
 
   const averageScore =
@@ -269,10 +262,12 @@ function Performance() {
       needs_improvement: 0,
     };
 
-    interviews.forEach((interview) => {
-      const score = Number(
-        interview.score || 0
-      );
+    const validInterviews = interviews.filter((interview) =>
+      Number.isFinite(Number(interview.score))
+    );
+
+    validInterviews.forEach((interview) => {
+      const score = Number(interview.score);
 
       if (score >= 80) {
         result.excellent++;
@@ -289,58 +284,6 @@ function Performance() {
 
     return result;
   }, [interviews]);
-
-  // ==========================================
-  // STRENGTHS
-  // ==========================================
-
-  const strengths = useMemo(() => {
-    const counts = {};
-
-    answers.forEach((answer) => {
-      const strength =
-        answer.strength?.trim();
-
-      if (!strength) return;
-
-      counts[strength] =
-        (counts[strength] || 0) + 1;
-    });
-
-    return Object.entries(counts)
-      .map(([strength, count]) => ({
-        strength,
-        count,
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-  }, [answers]);
-
-  // ==========================================
-  // IMPROVEMENTS
-  // ==========================================
-
-  const improvements = useMemo(() => {
-    const counts = {};
-
-    answers.forEach((answer) => {
-      const improvement =
-        answer.improvement?.trim();
-
-      if (!improvement) return;
-
-      counts[improvement] =
-        (counts[improvement] || 0) + 1;
-    });
-
-    return Object.entries(counts)
-      .map(([improvement, count]) => ({
-        improvement,
-        count,
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-  }, [answers]);
 
   // ==========================================
   // RECENT INTERVIEWS
@@ -405,7 +348,7 @@ function Performance() {
 
 
         <Link to="/" className="performance-logo">
-          <Brain size={25} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>  
 
@@ -446,7 +389,12 @@ function Performance() {
             to="/dashboard"
             className="performance-back-link"
           >
-            <Brain size={25} />
+            <ArrowLeft size={17} />
+            Back to Dashboard
+          </Link>
+
+          <Link to="/" className="performance-logo">
+            <img src={logo} alt="MockMate" />
             <span>MockMate</span>
           </Link>
 
@@ -502,7 +450,7 @@ function Performance() {
 
 
         <Link to="/" className="performance-logo">
-          <Brain size={25} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>  
 
@@ -589,7 +537,7 @@ function Performance() {
         </Link>
 
         <Link to="/" className="performance-logo">
-          <Brain size={25} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>  
 
@@ -652,9 +600,7 @@ function Performance() {
                   {averageScore}
                 </strong>
 
-                <span>
-                  /100
-                </span>
+               
 
               </div>
 
@@ -1033,9 +979,9 @@ function Performance() {
                 distribution[item.key] || 0;
 
               const percentage =
-                totalInterviews > 0
+                scoredInterviews.length > 0
                   ? (count /
-                      totalInterviews) *
+                      scoredInterviews.length) *
                     100
                   : 0;
 

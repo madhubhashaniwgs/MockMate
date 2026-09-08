@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import logo from "../assets/logo1.png";
 import {
-  Brain,
   User,
   Mail,
   Lock,
@@ -90,7 +90,7 @@ function Register() {
       <div className="auth-visual">
 
         <Link to="/" className="auth-logo">
-          <Brain size={30} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>
 
@@ -149,7 +149,7 @@ function Register() {
         <div className="auth-form-container">
 
           <div className="mobile-auth-logo">
-            <Brain size={28} />
+            <img src={logo} alt="MockMate" />
             <span>CareerAI</span>
           </div>
 

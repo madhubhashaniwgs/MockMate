@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import logo from "../assets/logo1.png";
 
 import {
   ArrowLeft,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 
 import "../styles/InterviewSetup.css";
+import AlertPopup from "../components/AlertPopup";
 import {
   generateInterviewQuestions,
 } from "../services/interviewService";
@@ -23,6 +25,7 @@ function InterviewSetup() {
   const [difficulty, setDifficulty] = useState("");
   const [questionCount, setQuestionCount] = useState(5);
   const [generating, setGenerating] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   const jobRoles = [
     "Frontend Developer",
@@ -68,6 +71,8 @@ function InterviewSetup() {
 
         console.log("Generated questions:", data.questions);
 
+        localStorage.removeItem("activeInterviewSession");
+
         navigate("/mock-interview", {
           state: {
             jobRole,
@@ -79,7 +84,7 @@ function InterviewSetup() {
       } catch (error) {
         console.error("Question generation error:", error);
 
-        alert(
+        setAlertMessage(
           error.message ||
             "Failed to generate interview questions."
         );
@@ -91,6 +96,11 @@ function InterviewSetup() {
   return (
     <div className="interview-setup-page">
 
+      <AlertPopup
+        message={alertMessage}
+        onClose={() => setAlertMessage("")}
+      />
+
       {/* Top Navigation */}
 
       <header className="setup-header">
@@ -101,7 +111,7 @@ function InterviewSetup() {
         </Link>
 
         <Link to="/" className="setup-logo">
-          <Brain size={25} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>
 

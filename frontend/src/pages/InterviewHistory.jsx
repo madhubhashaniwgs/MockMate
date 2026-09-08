@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import logo from "../assets/logo1.png";
 
 import {
-  Brain,
   ArrowLeft,
   History,
   CalendarDays,
@@ -147,7 +147,7 @@ function InterviewHistory() {
 
 
         <Link to="/" className="setup-logo">
-          <Brain size={25} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>  
 

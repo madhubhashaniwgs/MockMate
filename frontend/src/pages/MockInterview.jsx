@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import logo from "../assets/logo1.png";
 
 import {
   ArrowLeft,
@@ -14,11 +15,26 @@ import {
 } from "lucide-react";
 
 import "../styles/MockInterview.css";
+import AlertPopup from "../components/AlertPopup";
 import {
   evaluateAnswer,
   createInterview,
   saveInterviewAnswer,
 } from "../services/interviewService";
+
+const INTERVIEW_SESSION_KEY = "activeInterviewSession";
+
+const getSavedInterviewSession = () => {
+  try {
+    const savedSession = localStorage.getItem(
+      INTERVIEW_SESSION_KEY
+    );
+
+    return savedSession ? JSON.parse(savedSession) : null;
+  } catch {
+    return null;
+  }
+};
 
 function MockInterview() {
   const location = useLocation();
@@ -28,7 +44,9 @@ function MockInterview() {
   // INTERVIEW DATA
   // ==========================================
 
-  const interviewData = location.state;
+  const [savedSession] = useState(getSavedInterviewSession);
+  const restoredSession = savedSession;
+  const interviewData = location.state || restoredSession?.interviewData;
 
   const jobRole = interviewData?.jobRole || "";
   const difficulty = interviewData?.difficulty || "";
@@ -40,16 +58,40 @@ function MockInterview() {
   // STATES
   // ==========================================
 
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answer, setAnswer] = useState("");
-  const [answers, setAnswers] = useState([]);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(120);
+  const [currentQuestion, setCurrentQuestion] = useState(
+    restoredSession?.currentQuestion || 0
+  );
+  const [answer, setAnswer] = useState(
+    restoredSession?.answer || ""
+  );
+  const [answers, setAnswers] = useState(
+    restoredSession?.answers || []
+  );
+  const [showFeedback, setShowFeedback] = useState(
+    restoredSession?.showFeedback || false
+  );
+  const [timeLeft, setTimeLeft] = useState(() => {
+    if (!restoredSession?.questionDeadline) {
+      return 120;
+    }
+
+    return Math.max(
+      0,
+      Math.ceil(
+        (restoredSession.questionDeadline - Date.now()) / 1000
+      )
+    );
+  });
+  const [questionDeadline, setQuestionDeadline] = useState(
+    () => restoredSession?.questionDeadline || Date.now() + 120000
+  );
   const [saving, setSaving] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
   const [evaluationError, setEvaluationError] = useState("");
-  const [currentEvaluation, setCurrentEvaluation] =
-    useState(null);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [currentEvaluation, setCurrentEvaluation] = useState(
+    restoredSession?.currentEvaluation || null
+  );
 
   // ==========================================
   // CURRENT QUESTION
@@ -82,12 +124,37 @@ function MockInterview() {
   };
 
   // ==========================================
-  // RESET TIMER WHEN QUESTION CHANGES
+  // ==========================================
+  // SAVE AND RESTORE ACTIVE SESSION
   // ==========================================
 
   useEffect(() => {
-    setTimeLeft(120);
-  }, [currentQuestion]);
+    if (!interviewData || questions.length === 0) {
+      return;
+    }
+
+    localStorage.setItem(
+      INTERVIEW_SESSION_KEY,
+      JSON.stringify({
+        interviewData,
+        currentQuestion,
+        answer,
+        answers,
+        showFeedback,
+        currentEvaluation,
+        questionDeadline,
+      })
+    );
+  }, [
+    interviewData,
+    questions.length,
+    currentQuestion,
+    answer,
+    answers,
+    showFeedback,
+    currentEvaluation,
+    questionDeadline,
+  ]);
 
   // ==========================================
   // COUNTDOWN TIMER
@@ -104,18 +171,13 @@ function MockInterview() {
       return;
     }
 
-    if (timeLeft <= 0) {
-      return;
-    }
-
     const timer = setInterval(() => {
-      setTimeLeft((previousTime) => {
-        if (previousTime <= 1) {
-          return 0;
-        }
-
-        return previousTime - 1;
-      });
+      setTimeLeft(
+        Math.max(
+          0,
+          Math.ceil((questionDeadline - Date.now()) / 1000)
+        )
+      );
     }, 1000);
 
     return () => {
@@ -127,7 +189,62 @@ function MockInterview() {
     showFeedback,
     evaluating,
     saving,
+    questionDeadline,
+  ]);
+
+  // Mark unanswered questions when their timer expires.
+  useEffect(() => {
+    if (
+      timeLeft > 0 ||
+      showFeedback ||
+      evaluating ||
+      saving ||
+      !currentQuestionData
+    ) {
+      return;
+    }
+
+    const timeoutTransition = setTimeout(() => {
+      const timedOutAnswer = {
+        questionId:
+          currentQuestionData.id || currentQuestion + 1,
+        question: currentQuestionData.question,
+        answer: answer.trim(),
+        score: 0,
+        feedback: "Time ran out before this answer was submitted.",
+        strength: "No answer was submitted.",
+        improvement: "Try to complete your answer before the timer ends.",
+      };
+
+      setAnswers((previousAnswers) => {
+        const filteredAnswers = previousAnswers.filter(
+          (item) => item.questionId !== timedOutAnswer.questionId
+        );
+
+        return [...filteredAnswers, timedOutAnswer].sort(
+          (first, second) =>
+            Number(first.questionId) - Number(second.questionId)
+        );
+      });
+
+      setCurrentEvaluation({
+        score: 0,
+        feedback: timedOutAnswer.feedback,
+        strength: timedOutAnswer.strength,
+        improvement: timedOutAnswer.improvement,
+      });
+      setShowFeedback(true);
+    }, 0);
+
+    return () => clearTimeout(timeoutTransition);
+  }, [
     timeLeft,
+    showFeedback,
+    evaluating,
+    saving,
+    currentQuestionData,
+    currentQuestion,
+    answer,
   ]);
 
   // ==========================================
@@ -438,6 +555,7 @@ function MockInterview() {
             },
           }
         );
+        localStorage.removeItem(INTERVIEW_SESSION_KEY);
 
       } catch (error) {
         console.error(
@@ -450,7 +568,7 @@ function MockInterview() {
             "Interview completed, but failed to save your result."
         );
 
-        alert(
+        setAlertMessage(
           error.message ||
             "Interview completed, but failed to save your result."
         );
@@ -475,6 +593,7 @@ function MockInterview() {
     setShowFeedback(false);
     setCurrentEvaluation(null);
     setEvaluationError("");
+    setQuestionDeadline(Date.now() + 120000);
     setTimeLeft(120);
   };
 
@@ -490,6 +609,7 @@ function MockInterview() {
 
   const confirmExit = () => {
     setShowExitModal(false);
+    localStorage.removeItem(INTERVIEW_SESSION_KEY);
     navigate("/dashboard");
   };
 
@@ -568,6 +688,11 @@ function MockInterview() {
   return (
     <div className="mock-interview-page">
 
+      <AlertPopup
+        message={alertMessage}
+        onClose={() => setAlertMessage("")}
+      />
+
       {/* ======================================
           HEADER
       ====================================== */}
@@ -593,7 +718,7 @@ function MockInterview() {
             to="/dashboard"
             className="interview-brand"
           >
-            <Brain size={24} />
+            <img src={logo} alt="MockMate" />
 
             <span>
               MockMate

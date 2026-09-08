@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import logo from "../assets/logo1.png";
 
 import {
-  Brain,
   Lock,
   KeyRound,
   CheckCircle,
@@ -92,7 +92,7 @@ function ResetPassword() {
           to="/"
           className="reset-password-logo"
         >
-          <Brain size={28} />
+          <img src={logo} alt="MockMate" />
           <span>MockMate</span>
         </Link>
 

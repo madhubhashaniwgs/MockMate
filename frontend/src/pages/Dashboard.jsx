@@ -1,5 +1,4 @@
 import {
-  Brain,
   LayoutDashboard,
   MessageSquare,
   History,
@@ -13,9 +12,12 @@ import {
 
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
+import logo from "../assets/logo1.png";
 import "../styles/Dashboard.css";
 import { getInterviews } from "../services/interviewService";
+import { getProfile } from "../services/authService";
+
+const API_ORIGIN = "http://localhost:5000";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -24,11 +26,26 @@ function Dashboard() {
   // USER
   // ===============================
 
-  const [user] = useState(() => {
+  const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
 
     return savedUser ? JSON.parse(savedUser) : null;
   });
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) return;
+
+    getProfile(token)
+      .then((data) => {
+        setUser(data.user);
+        localStorage.setItem("user", JSON.stringify(data.user));
+      })
+      .catch((error) => {
+        console.error("Dashboard profile error:", error);
+      });
+  }, []);
 
   const userName = user?.name || "User";
   const userInitial = userName.charAt(0).toUpperCase();
@@ -141,7 +158,7 @@ function Dashboard() {
       <aside className="dashboard-sidebar">
 
         <Link to="/" className="dashboard-logo">
-          <Brain size={29} />
+          <img src={logo} alt="MockMate" className="logo" />
           <span>MockMate</span>
         </Link>
 
@@ -227,7 +244,14 @@ function Dashboard() {
           className="dashboard-profile"
         >
           <div className="profile-avatar">
-            {userInitial}
+            {user?.profile_image_path ? (
+              <img
+                src={`${API_ORIGIN}${user.profile_image_path}`}
+                alt={`${userName} profile`}
+              />
+            ) : (
+              userInitial
+            )}
           </div>
 
           <div className="profile-info">
@@ -254,7 +278,7 @@ function Dashboard() {
           <div className="welcome-content">
 
             <div className="welcome-badge">
-              <Brain size={15} />
+              <img src={logo} alt="MockMate" className="logo" />
               AI Mock Interview
             </div>
 
@@ -279,7 +303,7 @@ function Dashboard() {
           </div>
 
           <div className="welcome-icon">
-            <Brain size={85} />
+            <img src={logo} alt="MockMate Logo"  className="logo" />
           </div>
 
         </section>
