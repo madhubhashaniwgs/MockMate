@@ -6,6 +6,7 @@ const pool = require("./config/database");
 const authRoutes = require("./routes/auth");
 const interviewRoutes = require("./routes/interviewRoutes");
 const aiRoutes = require("./routes/aiRoutes");
+const errorHandler = require("./middleware/errorHandler");
 
 
 const app = express();
@@ -39,6 +40,8 @@ app.get("/", async (req, res) => {
     });
   }
 });
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
