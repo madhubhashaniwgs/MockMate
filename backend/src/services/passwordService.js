@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const pool = require("../config/database");
 const passwordResetModel = require("../models/passwordResetModel");
+const { validatePassword } = require("../utils/validation");
 
 const resetPassword = async ({
   code,
@@ -20,10 +21,9 @@ const resetPassword = async ({
     throw error;
   }
 
-  if (newPassword.length < 6) {
-    const error = new Error(
-      "Password must be at least 6 characters long."
-    );
+  const passwordError = validatePassword(newPassword);
+  if (passwordError) {
+    const error = new Error(passwordError);
     error.statusCode = 400;
     throw error;
   }

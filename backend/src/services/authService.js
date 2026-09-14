@@ -5,6 +5,11 @@ const pool = require("../config/database");
 const userModel = require("../models/userModel");
 const passwordResetModel = require("../models/passwordResetModel");
 const { sendPasswordResetEmail } = require("../utils/emailService");
+const {
+  validateName,
+  validateEmail,
+  validatePassword,
+} = require("../utils/validation");
 
 const publicUser = (user) => ({
   id: user.id,
@@ -17,6 +22,16 @@ const publicUser = (user) => ({
 const register = async ({ name, email, password }) => {
   if (!name || !email || !password) {
     const error = new Error("Name, email and password are required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const nameError = validateName(name);
+  const emailError = validateEmail(email);
+  const passwordError = validatePassword(password);
+
+  if (nameError || emailError || passwordError) {
+    const error = new Error(nameError || emailError || passwordError);
     error.statusCode = 400;
     throw error;
   }
@@ -43,6 +58,13 @@ const register = async ({ name, email, password }) => {
 const login = async ({ email, password }) => {
   if (!email || !password) {
     const error = new Error("Email and password are required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const emailError = validateEmail(email);
+  if (emailError) {
+    const error = new Error(emailError);
     error.statusCode = 400;
     throw error;
   }
@@ -82,8 +104,15 @@ const requestPasswordReset = async (email) => {
     throw error;
   }
 
+  const emailError = validateEmail(email);
+  if (emailError) {
+    const error = new Error(emailError);
+    error.statusCode = 400;
+    throw error;
+  }
+
   const user = await userModel.findByEmail(email.trim().toLowerCase());
-  const message = "If an account exists with this email, a password reset link has been sent.";
+  const message = "If an account exists with this email, a password reset code has been sent.";
 
   if (!user) return message;
 
@@ -145,6 +174,14 @@ const updateProfile = async (userId, { name, email }) => {
     throw error;
   }
 
+  const nameError = validateName(name);
+  const emailError = validateEmail(email);
+  if (nameError || emailError) {
+    const error = new Error(nameError || emailError);
+    error.statusCode = 400;
+    throw error;
+  }
+
   const normalizedName = name.trim();
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -187,8 +224,9 @@ const changePassword = async (userId, data) => {
     error.statusCode = 400;
     throw error;
   }
-  if (newPassword.length < 6) {
-    const error = new Error("New password must be at least 6 characters long.");
+  const passwordError = validatePassword(newPassword);
+  if (passwordError) {
+    const error = new Error(passwordError);
     error.statusCode = 400;
     throw error;
   }

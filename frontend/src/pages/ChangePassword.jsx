@@ -14,6 +14,7 @@ import logo from "../assets/logo1.png";
 
 import "../styles/ChangePassword.css";
 import { changePassword } from "../services/authService";
+import { validatePassword } from "../utils/validation";
 
 function ChangePassword() {
   const navigate = useNavigate();
@@ -57,8 +58,9 @@ function ChangePassword() {
       return;
     }
 
-    if (formData.newPassword.length < 6) {
-      setError("New password must be at least 6 characters long.");
+    const passwordError = validatePassword(formData.newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -215,6 +217,8 @@ function ChangePassword() {
                   value={formData.currentPassword}
                   onChange={handleChange}
                   placeholder="Enter your current password"
+                  autoComplete="current-password"
+                  minLength={8}
                 />
 
                 <button
@@ -254,6 +258,8 @@ function ChangePassword() {
                   value={formData.newPassword}
                   onChange={handleChange}
                   placeholder="Enter your new password"
+                  autoComplete="new-password"
+                  minLength={8}
                 />
 
                 <button
@@ -273,7 +279,7 @@ function ChangePassword() {
               </div>
 
               <small>
-                Password must contain at least 6 characters.
+                Use 8+ characters with uppercase, lowercase, number, and special character.
               </small>
 
             </div>
@@ -301,6 +307,8 @@ function ChangePassword() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm your new password"
+                  autoComplete="new-password"
+                  minLength={8}
                 />
 
                 <button

@@ -10,6 +10,7 @@ import {
 
 import "../styles/ResetPassword.css";
 import { resetPassword, verifyResetCode } from "../services/authService";
+import { validatePassword } from "../utils/validation";
 
 function ResetPassword() {
   const navigate = useNavigate();
@@ -46,10 +47,9 @@ function ResetPassword() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError(
-        "Password must be at least 6 characters long."
-      );
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -180,6 +180,8 @@ function ResetPassword() {
                 onChange={(e) =>
                   setNewPassword(e.target.value)
                 }
+                  minLength={8}
+                  autoComplete="new-password"
                 required
               />
 
@@ -204,6 +206,8 @@ function ResetPassword() {
                 onChange={(e) =>
                   setConfirmPassword(e.target.value)
                 }
+                  minLength={8}
+                  autoComplete="new-password"
                 required
               />
 

@@ -10,6 +10,7 @@ import {
 
 import "../styles/ForgotPassword.css";
 import { forgotPassword } from "../services/authService";
+import { validateEmail } from "../utils/validation";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -24,6 +25,13 @@ function ForgotPassword() {
       setLoading(true);
       setMessage("");
       setError("");
+
+      const emailError = validateEmail(email);
+      if (emailError) {
+        setError(emailError);
+        setLoading(false);
+        return;
+      }
 
       try {
         const data = await forgotPassword(email);

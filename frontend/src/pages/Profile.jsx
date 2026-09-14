@@ -26,6 +26,7 @@ import {
   uploadProfileImage,
   removeProfileImage,
 } from "../services/authService";
+import { validateEmail, validateName } from "../utils/validation";
 
 const API_ORIGIN = "http://localhost:5000";
 
@@ -131,26 +132,15 @@ function Profile() {
     const name = editName.trim();
     const email = editEmail.trim().toLowerCase();
 
-    // Validate name
-    if (!name) {
-      setSaveError("Please enter your full name.");
+    const nameError = validateName(name);
+    if (nameError) {
+      setSaveError(nameError);
       return;
     }
 
-    // Validate email
-    if (!email) {
-      setSaveError("Please enter your email address.");
-      return;
-    }
-
-    // Basic email validation
-    const emailPattern =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailPattern.test(email)) {
-      setSaveError(
-        "Please enter a valid email address."
-      );
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setSaveError(emailError);
       return;
     }
 

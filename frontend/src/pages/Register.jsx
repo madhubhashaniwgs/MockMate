@@ -13,6 +13,7 @@ import {
 
 import "../styles/Register.css";
 import { registerUser } from "../services/authService";
+import { validateEmail, validateName, validatePassword } from "../utils/validation";
 
 function Register() {
   const navigate = useNavigate();
@@ -55,8 +56,12 @@ function Register() {
         return;
       }
 
-      if (formData.password.length < 6) {
-        setError("Password must contain at least 6 characters.");
+      const nameError = validateName(formData.name);
+      const emailError = validateEmail(formData.email);
+      const passwordError = validatePassword(formData.password);
+
+      if (nameError || emailError || passwordError) {
+        setError(nameError || emailError || passwordError);
         return;
       }
 
@@ -77,7 +82,7 @@ function Register() {
         navigate("/login");
       } catch (error) {
         console.error("Registration error:", error);
-        setError("Unable to connect to the server.");
+        setError(error.message || "Unable to connect to the server.");
       }
     };
 
@@ -251,6 +256,8 @@ function Register() {
                   placeholder="Create a password"
                   value={formData.password}
                   onChange={handleChange}
+                  minLength={8}
+                  autoComplete="new-password"
                 />
 
                 <button
@@ -269,8 +276,8 @@ function Register() {
 
               </div>
 
-              <small>
-                Use at least 6 characters.
+                <small>
+                Use 8+ characters with uppercase, lowercase, number, and special character.
               </small>
 
             </div>
@@ -299,6 +306,8 @@ function Register() {
                   placeholder="Confirm your password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                  minLength={8}
+                  autoComplete="new-password"
                 />
 
                 <button
