@@ -50,3 +50,14 @@ Fields:
 - strength
 - improvement
 - created_at
+
+## Password Reset Tokens Table
+
+Stores hashed, short-lived password reset codes. The existing `token` column stores
+the SHA-256 hash of the emailed code rather than the code itself.
+
+Fields:
+- id
+- user_id
+- token
+- expires_at

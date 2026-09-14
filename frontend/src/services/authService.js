@@ -133,8 +133,26 @@ export const forgotPassword = async (email) => {
 
 
 // Reset Password
+export const verifyResetCode = async (code) => {
+  const response = await fetch(`${API_URL}/verify-reset-code`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ code }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Invalid or expired reset code.");
+  }
+
+  return data;
+};
+
 export const resetPassword = async (
-  token,
+  code,
   newPassword,
   confirmPassword
 ) => {
@@ -144,7 +162,7 @@ export const resetPassword = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      token,
+      code,
       newPassword,
       confirmPassword,
     }),

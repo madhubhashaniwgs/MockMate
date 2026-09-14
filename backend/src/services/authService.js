@@ -87,7 +87,17 @@ const requestPasswordReset = async (email) => {
 
   if (!user) return message;
 
-  const token = crypto.randomBytes(32).toString("hex");
+  const configuredLength = Number(process.env.RESET_CODE_LENGTH || 6);
+  const codeLength = [4, 6].includes(configuredLength)
+    ? configuredLength
+    : 6;
+  const code = crypto
+    .randomInt(10 ** (codeLength - 1), 10 ** codeLength)
+    .toString();
+  const token = crypto
+    .createHash("sha256")
+    .update(code)
+    .digest("hex");
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
   await passwordResetModel.createToken({
@@ -97,13 +107,35 @@ const requestPasswordReset = async (email) => {
   });
 
   try {
-    await sendPasswordResetEmail(user.email, token);
+    await sendPasswordResetEmail(user.email, code, codeLength);
   } catch (error) {
     await passwordResetModel.deleteToken(token);
     throw error;
   }
 
   return message;
+};
+
+const verifyPasswordResetCode = async (code) => {
+  if (!code || !/^\d{4,6}$/.test(code)) {
+    const error = new Error("Enter a valid reset code.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const token = crypto
+    .createHash("sha256")
+    .update(code)
+    .digest("hex");
+  const resetRecord = await passwordResetModel.findValidToken(token);
+
+  if (!resetRecord) {
+    const error = new Error("Invalid or expired reset code.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return { valid: true };
 };
 
 const updateProfile = async (userId, { name, email }) => {
@@ -201,6 +233,7 @@ module.exports = {
   login,
   getProfile,
   requestPasswordReset,
+  verifyPasswordResetCode,
   updateProfile,
   changePassword,
   updateProfileImage,

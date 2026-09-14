@@ -18,6 +18,10 @@ router.post(
   asyncHandler(authController.forgotPassword)
 );
 router.post(
+  "/verify-reset-code",
+  asyncHandler(authController.verifyPasswordResetCode)
+);
+router.post(
   "/reset-password",
   asyncHandler(authController.resetPassword)
 );

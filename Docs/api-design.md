@@ -21,13 +21,19 @@ Get the authenticated user's profile, including profile image path
 POST /api/auth/forgot-password
 
 Purpose:
-Send a password reset link to a registered email address
+Send a one-time password reset code to a registered email address
+
+
+POST /api/auth/verify-reset-code
+
+Purpose:
+Verify the password reset code before showing the new password form
 
 
 POST /api/auth/reset-password
 
 Purpose:
-Reset a user's password using a valid, time-limited reset token
+Reset a user's password using a valid, time-limited reset code
 
 
 POST /api/auth/profile/image

@@ -9,14 +9,16 @@ import {
 } from "lucide-react";
 
 import "../styles/ResetPassword.css";
-import { resetPassword } from "../services/authService";
+import { resetPassword, verifyResetCode } from "../services/authService";
 
 function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const token = searchParams.get("token");
+  const email = searchParams.get("email");
 
+  const [code, setCode] = useState("");
+  const [codeVerified, setCodeVerified] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -30,8 +32,17 @@ function ResetPassword() {
     setMessage("");
     setError("");
 
-    if (!token) {
-      setError("Invalid password reset link.");
+    if (!codeVerified) {
+      try {
+        setLoading(true);
+        await verifyResetCode(code.trim());
+        setCodeVerified(true);
+        setMessage("Code verified. Create your new password.");
+      } catch (error) {
+        setError(error.message || "Invalid or expired reset code.");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
@@ -51,7 +62,7 @@ function ResetPassword() {
       setLoading(true);
 
       await resetPassword(
-        token,
+        code.trim(),
         newPassword,
         confirmPassword
       );
@@ -124,9 +135,35 @@ function ResetPassword() {
           </div>
         )}
 
+        {!codeVerified && (
+          <p className="reset-code-help">
+            Enter the code sent to {email || "your email address"}.
+          </p>
+        )}
+
         <form onSubmit={handleSubmit}>
 
-          <div className="reset-form-group">
+          {!codeVerified && (
+            <div className="reset-form-group">
+              <label htmlFor="reset-code">Verification Code</label>
+              <div className="reset-input-wrapper">
+                <KeyRound size={16} />
+                <input
+                  id="reset-code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{4,6}"
+                  maxLength={6}
+                  placeholder="Enter your code"
+                  value={code}
+                  onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {codeVerified && <div className="reset-form-group">
 
             <label>
               New Password
@@ -148,9 +185,9 @@ function ResetPassword() {
 
             </div>
 
-          </div>
+          </div>}
 
-          <div className="reset-form-group">
+          {codeVerified && <div className="reset-form-group">
 
             <label>
               Confirm Password
@@ -172,16 +209,14 @@ function ResetPassword() {
 
             </div>
 
-          </div>
+          </div>}
 
           <button
             type="submit"
             className="reset-password-btn"
             disabled={loading}
           >
-            {loading
-              ? "Resetting..."
-              : "Reset Password"}
+            {loading ? "Checking..." : codeVerified ? "Reset Password" : "Verify Code"}
           </button>
 
         </form>

@@ -23,6 +23,11 @@ const forgotPassword = async (req, res) => {
   res.json({ success: true, message });
 };
 
+const verifyPasswordResetCode = async (req, res) => {
+  const result = await authService.verifyPasswordResetCode(req.body.code);
+  res.json({ success: true, ...result });
+};
+
 const resetPassword = async (req, res) => {
   await passwordService.resetPassword(req.body);
   res.json({ success: true, message: "Password reset successfully." });
@@ -90,6 +95,7 @@ module.exports = {
   login,
   getProfile,
   forgotPassword,
+  verifyPasswordResetCode,
   resetPassword,
   updateProfile,
   changePassword,

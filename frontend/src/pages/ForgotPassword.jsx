@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo1.png";
 import {
   Mail,
@@ -16,6 +16,7 @@ function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
       event.preventDefault();
@@ -27,10 +28,8 @@ function ForgotPassword() {
       try {
         const data = await forgotPassword(email);
 
-        setMessage(
-          data.message ||
-            "If an account exists with this email, a password reset link has been sent."
-        );
+        setMessage(data.message || "A reset code has been sent to your email.");
+        navigate(`/reset-password?email=${encodeURIComponent(email.trim().toLowerCase())}`);
       } catch (error) {
         console.error("Forgot password error:", error);
         setError(

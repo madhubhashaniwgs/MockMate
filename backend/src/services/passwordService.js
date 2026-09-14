@@ -1,13 +1,14 @@
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const pool = require("../config/database");
 const passwordResetModel = require("../models/passwordResetModel");
 
 const resetPassword = async ({
-  token,
+  code,
   newPassword,
   confirmPassword,
 }) => {
-  if (!token || !newPassword || !confirmPassword) {
+  if (!code || !newPassword || !confirmPassword) {
     const error = new Error("All fields are required.");
     error.statusCode = 400;
     throw error;
@@ -29,6 +30,10 @@ const resetPassword = async ({
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
   const client = await pool.connect();
+  const token = crypto
+    .createHash("sha256")
+    .update(code)
+    .digest("hex");
 
   try {
     await client.query("BEGIN");
