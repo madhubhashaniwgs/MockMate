@@ -2,44 +2,64 @@
 
 ## Project Objective
 
-AI-powered platform that helps users improve their career by analyzing resumes, identifying skill gaps, conducting mock interviews, and generating personalized career roadmaps.
+The current MVP helps users prepare for technical interviews through timed, text-based mock interviews, AI-generated questions, answer evaluation, performance reports, and interview history.
 
-## Main Features
+Resume analysis, speaking interviews, and career roadmaps are planned extensions and are not implemented in the current version.
+
+## Implemented Features
 
 1. User Authentication
-- User registration
-- User login
+- User registration and login
+- JWT-based authentication
+- Protected user resources
+- Profile management and profile image upload
+- Password change and password reset flow
 
-2. Resume Management
-- Upload resume
-- Extract resume information
-- Analyze skills
+2. Text-Based AI Mock Interviews
+- Select a job role and difficulty
+- Generate technical interview questions with Gemini
+- Answer questions using text
+- Two-minute timer for each question
+- Resume active interview state after a page refresh
 
-3. AI Resume Analysis
-- Resume score
-- Identify missing skills
-- Provide recommendations
+3. AI Answer Evaluation
+- Score each submitted answer
+- Show strengths
+- Show improvement areas
+- Provide constructive feedback
 
-4. AI Mock Interview
-- Generate interview questions
-- Evaluate answers
-- Provide feedback
+4. Performance and History
+- Overall and per-question scores
+- Performance levels and score distribution
+- Performance trends
+- Completed interview history
 
-5. Career Roadmap
-- Generate learning roadmap
-- Track learning progress
+## Planned Features
+
+The following features are not implemented yet:
+
+- Resume upload and AI resume analysis
+- Resume scoring and missing-skill detection
+- Speaking or voice-based interviews
+- Speech-to-text answer input
+- Personalized career roadmap generation
+- Learning progress tracking
+- Job recommendations
 
 ## Technology Stack
 
 Frontend:
 - React.js
+- JavaScript
+- React Router
 
 Backend:
 - Node.js
 - Express.js
+- REST API
 
 Database:
 - PostgreSQL
 
 AI:
-- Gemini API
+- Google Gemini API

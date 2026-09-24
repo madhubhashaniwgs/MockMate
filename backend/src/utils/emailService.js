@@ -8,10 +8,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendPasswordResetEmail = async (email, token) => {
-  const resetUrl =
-    `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-
+const sendPasswordResetEmail = async (email, code, codeLength) => {
   await transporter.sendMail({
     from: `"MockMate" <${process.env.EMAIL_USER}>`,
     to: email,
@@ -34,25 +31,11 @@ const sendPasswordResetEmail = async (email, token) => {
         </p>
 
         <p>
-          Click the button below to create a new password.
+            Enter the following ${codeLength}-digit code in MockMate to create a new password.
         </p>
 
-        <div style="text-align:center; margin:30px 0;">
-
-          <a
-            href="${resetUrl}"
-            style="
-              background:#4f46e5;
-              color:white;
-              padding:12px 24px;
-              text-decoration:none;
-              border-radius:6px;
-              display:inline-block;
-              font-weight:bold;
-            "
-          >
-            Reset Password
-          </a>
+        <div style="text-align:center; margin:30px 0; font-size:32px; letter-spacing:8px; font-weight:bold;">
+          ${code}
 
         </div>
 
