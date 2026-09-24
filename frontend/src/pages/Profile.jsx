@@ -28,7 +28,7 @@ import {
 } from "../services/authService";
 import { validateEmail, validateName } from "../utils/validation";
 
-const API_ORIGIN = "http://localhost:5000";
+const API_ORIGIN = import.meta.env.VITE_API_URL;
 
 function Profile() {
   

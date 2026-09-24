@@ -17,7 +17,7 @@ import "../styles/Dashboard.css";
 import { getInterviews } from "../services/interviewService";
 import { getProfile } from "../services/authService";
 
-const API_ORIGIN = "http://localhost:5000";
+const API_ORIGIN = import.meta.env.VITE_API_URL;
 
 function Dashboard() {
   const navigate = useNavigate();

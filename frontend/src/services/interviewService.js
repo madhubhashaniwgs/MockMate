@@ -1,6 +1,6 @@
 
-const API_URL = "http://localhost:5000/api/interviews";
-const AI_API_URL = "http://localhost:5000/api/ai";
+const API_URL = `${import.meta.env.VITE_API_URL}/api/interviews`;
+const AI_API_URL = `${import.meta.env.VITE_API_URL}/api/ai`;
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
