@@ -10,6 +10,7 @@ import {
 
 import "../styles/Login.css";
 import { loginUser } from "../services/authService";
+import { validateEmail } from "../utils/validation";
 import logo1 from "../assets/logo1.png";
 import AlertPopup from "../components/AlertPopup";
 
@@ -22,6 +23,12 @@ function Login() {
 
   const email = event.target.email.value;
   const password = event.target.password.value;
+
+  const emailError = validateEmail(email);
+  if (emailError || !password) {
+    setAlertMessage(emailError || "Please enter your password.");
+    return;
+  }
 
   try {
     const data = await loginUser(email, password);
@@ -124,6 +131,7 @@ function Login() {
                   id="email"
                   type="email"
                   placeholder="you@example.com"
+                  autoComplete="email"
                   required
                 />
 
@@ -158,6 +166,7 @@ function Login() {
                   id="password"
                   type="password"
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   required
                 />
 

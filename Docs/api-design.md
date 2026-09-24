@@ -1,6 +1,3 @@
-# API Design
-
-
 ## Authentication APIs
 
 POST /api/auth/register
@@ -21,6 +18,24 @@ Purpose:
 Get the authenticated user's profile, including profile image path
 
 
+POST /api/auth/forgot-password
+
+Purpose:
+Send a one-time password reset code to a registered email address
+
+
+POST /api/auth/verify-reset-code
+
+Purpose:
+Verify the password reset code before showing the new password form
+
+
+POST /api/auth/reset-password
+
+Purpose:
+Reset a user's password using a valid, time-limited reset code
+
+
 POST /api/auth/profile/image
 
 Purpose:
@@ -33,37 +48,40 @@ Purpose:
 Remove the authenticated user's profile picture
 
 
-## Resume APIs
-
-POST /api/resume/upload
-
-Purpose:
-Upload user resume
-
-
-GET /api/resume
-
-Purpose:
-Get resume details
-
-
 ## Interview APIs
 
-POST /api/interview/start
+POST /api/ai/generate-questions
 
 Purpose:
-Start AI interview
+Generate technical interview questions for a selected role and difficulty
 
 
-POST /api/interview/submit
-
-Purpose:
-Submit interview answers
-
-
-## Roadmap APIs
-
-POST /api/roadmap/generate
+POST /api/interviews
 
 Purpose:
-Generate career roadmap
+Save a completed interview
+
+
+GET /api/interviews
+
+Purpose:
+Get the authenticated user's interview history
+
+
+GET /api/interviews/:id
+
+Purpose:
+Get one interview and its answers
+
+
+POST /api/interviews/evaluate
+
+Purpose:
+Evaluate a text answer with AI
+
+
+POST /api/interviews/:id/answers
+
+Purpose:
+Save an evaluated interview answer
+
