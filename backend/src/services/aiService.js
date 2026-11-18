@@ -1,5 +1,7 @@
 const { GoogleGenAI } = require("@google/genai");
 
+const REQUEST_TIMEOUT_MS = 25000;
+
 const getAiClient = () => {
   if (!process.env.GEMINI_API_KEY) {
     const error = new Error("Gemini API key is not configured");
@@ -10,26 +12,57 @@ const getAiClient = () => {
   return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 };
 
-const FALLBACK_MODELS = [
-  process.env.GEMINI_MODEL || "gemini-3.8-flash",
-  "gemini-3.5-flash-lite",
-];
+const PRIMARY_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+const FALLBACK_MODEL = "gemini-3.8-flash";
+
+// gemini-3.8-flash rejects "minimal" thinking with a 400; all other
+// Gemini 3 Flash models accept it.
+const thinkingLevelFor = (modelId) =>
+  modelId === FALLBACK_MODEL ? "low" : "minimal";
+
+const MODEL_CHAIN = [...new Set([PRIMARY_MODEL, FALLBACK_MODEL])];
+
+const RETRYABLE_STATUSES = new Set([429, 503]);
 
 const isRetryableModelError = (error) => {
   const status = error?.status ?? error?.statusCode;
-  return status === 503 || status === 429 || status === 404;
+  return RETRYABLE_STATUSES.has(status);
 };
 
-const generateContentWithFallback = async (prompt) => {
+const generateContentWithFallback = async (
+  prompt,
+  { maxOutputTokens, responseJsonSchema }
+) => {
   const client = getAiClient();
   let lastError;
 
-  for (const model of FALLBACK_MODELS) {
+  for (let i = 0; i < MODEL_CHAIN.length; i++) {
+    const model = MODEL_CHAIN[i];
+
     try {
-      return await client.models.generateContent({ model, contents: prompt });
+      return await client.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+          maxOutputTokens,
+          responseMimeType: "application/json",
+          responseJsonSchema,
+          thinkingConfig: { thinkingLevel: thinkingLevelFor(model) },
+        },
+      });
     } catch (error) {
       lastError = error;
-      if (!isRetryableModelError(error)) throw error;
+      const nextModel = MODEL_CHAIN[i + 1];
+      const status = error?.status ?? error?.statusCode ?? "unknown";
+
+      if (!nextModel || !isRetryableModelError(error)) {
+        throw error;
+      }
+
+      console.warn(
+        `[aiService] Model ${model} failed with status ${status}; falling back to ${nextModel}`
+      );
     }
   }
 
@@ -50,6 +83,35 @@ const parseJsonResponse = (text, message) => {
     parseError.cause = error;
     throw parseError;
   }
+};
+
+const QUESTIONS_SCHEMA = {
+  type: "object",
+  properties: {
+    questions: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "integer" },
+          question: { type: "string" },
+        },
+        required: ["id", "question"],
+      },
+    },
+  },
+  required: ["questions"],
+};
+
+const EVALUATION_SCHEMA = {
+  type: "object",
+  properties: {
+    score: { type: "integer" },
+    feedback: { type: "string" },
+    strength: { type: "string" },
+    improvement: { type: "string" },
+  },
+  required: ["score", "feedback", "strength", "improvement"],
 };
 
 const generateQuestions = async ({
@@ -86,7 +148,10 @@ Expected format:
 }
 `;
 
-  const response = await generateContentWithFallback(prompt);
+  const response = await generateContentWithFallback(prompt, {
+    maxOutputTokens: 1024,
+    responseJsonSchema: QUESTIONS_SCHEMA,
+  });
   const data = parseJsonResponse(
     response.text || "",
     "Gemini returned invalid question data"
@@ -132,7 +197,10 @@ Rules:
 - improvement must describe one actionable improvement
 `;
 
-  const response = await generateContentWithFallback(prompt);
+  const response = await generateContentWithFallback(prompt, {
+    maxOutputTokens: 512,
+    responseJsonSchema: EVALUATION_SCHEMA,
+  });
   const evaluation = parseJsonResponse(
     response.text || "",
     "Gemini returned invalid evaluation data"
