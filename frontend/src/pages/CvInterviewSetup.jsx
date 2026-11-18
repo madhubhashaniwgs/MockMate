@@ -369,6 +369,28 @@ function CvInterviewSetup() {
       <p className="cv-empty-note">None listed</p>
     );
 
+  const hasItems = (value) =>
+    Array.isArray(value) &&
+    value.some((item) =>
+      typeof item === "string" ? item.trim().length > 0 : item != null
+    );
+
+  const DetailList = ({ items }) => {
+    const meaningful = (Array.isArray(items) ? items : []).filter(
+      (item) => typeof item === "string" && item.trim()
+    );
+
+    if (meaningful.length === 0) return null;
+
+    return (
+      <ul className="cv-detail-list">
+        {meaningful.map((item, index) => (
+          <li key={index}>{item}</li>
+        ))}
+      </ul>
+    );
+  };
+
   const renderPreviewStep = () => (
     <div className="cv-setup-section">
       <div className="cv-section-title">
@@ -394,7 +416,12 @@ function CvInterviewSetup() {
       <div className="cv-profile-card">
         <div className="cv-profile-summary">
           <h3>Personal Summary</h3>
-          <p>{profile.personalSummary || "Not available"}</p>
+          <p>{
+            typeof profile.personalSummary === "string" &&
+            profile.personalSummary.trim()
+              ? profile.personalSummary
+              : "Not available"
+          }</p>
         </div>
 
         <div className="cv-profile-grid">
@@ -414,16 +441,29 @@ function CvInterviewSetup() {
 
           <div className="cv-profile-block">
             <h4>
-              <FolderKanban size={14} /> Projects ({profile.projects?.length || 0})
+              <FolderKanban size={14} /> Projects (
+              {Array.isArray(profile.projects) ? profile.projects.length : 0})
             </h4>
-            {(profile.projects || []).map((project, i) => (
-              <div key={i} className="cv-profile-item">
-                <strong>{project.name}</strong>
-                <span>{project.description}</span>
-                <SkillChips items={project.technologies} />
-              </div>
-            ))}
-            {(!profile.projects || profile.projects.length === 0) && (
+            {hasItems(profile.projects) ? (
+              profile.projects.map((project, i) => (
+                <div key={i} className="cv-profile-item">
+                  <strong>{project.name || "Untitled project"}</strong>
+                  {typeof project.description === "string" &&
+                    project.description.trim() && (
+                    <span>{project.description}</span>
+                  )}
+                  <SkillChips items={project.technologies} />
+                  {hasItems(project.responsibilities) && (
+                    <p className="cv-item-sub">Responsibilities</p>
+                  )}
+                  <DetailList items={project.responsibilities} />
+                  {hasItems(project.achievements) && (
+                    <p className="cv-item-sub">Achievements</p>
+                  )}
+                  <DetailList items={project.achievements} />
+                </div>
+              ))
+            ) : (
               <p className="cv-empty-note">None listed</p>
             )}
           </div>
@@ -431,18 +471,26 @@ function CvInterviewSetup() {
           <div className="cv-profile-block">
             <h4>
               <Briefcase size={14} /> Work Experience (
-              {profile.workExperience?.length || 0})
+              {Array.isArray(profile.workExperience)
+                ? profile.workExperience.length
+                : 0}
+              )
             </h4>
-            {(profile.workExperience || []).map((job, i) => (
-              <div key={i} className="cv-profile-item">
-                <strong>{job.jobTitle}</strong>
-                <span>
-                  {job.company} — {job.duration}
-                </span>
-              </div>
-            ))}
-            {(!profile.workExperience ||
-              profile.workExperience.length === 0) && (
+            {hasItems(profile.workExperience) ? (
+              profile.workExperience.map((job, i) => (
+                <div key={i} className="cv-profile-item">
+                  <strong>
+                    {job.jobTitle || "Role not specified"}
+                  </strong>
+                  <span>
+                    {[job.company, job.duration]
+                      .filter((v) => typeof v === "string" && v.trim())
+                      .join(" — ") || "Details not available"}
+                  </span>
+                  <DetailList items={job.responsibilities} />
+                </div>
+              ))
+            ) : (
               <p className="cv-empty-note">None listed</p>
             )}
           </div>
@@ -450,17 +498,23 @@ function CvInterviewSetup() {
           <div className="cv-profile-block">
             <h4>
               <GraduationCap size={14} /> Education (
-              {profile.education?.length || 0})
+              {Array.isArray(profile.education) ? profile.education.length : 0})
             </h4>
-            {(profile.education || []).map((edu, i) => (
-              <div key={i} className="cv-profile-item">
-                <strong>{edu.qualification}</strong>
-                <span>
-                  {edu.institution} — {edu.duration}
-                </span>
-              </div>
-            ))}
-            {(!profile.education || profile.education.length === 0) && (
+            {hasItems(profile.education) ? (
+              profile.education.map((edu, i) => (
+                <div key={i} className="cv-profile-item">
+                  <strong>
+                    {edu.qualification || "Qualification not specified"}
+                  </strong>
+                  <span>
+                    {[edu.institution, edu.duration]
+                      .filter((v) => typeof v === "string" && v.trim())
+                      .join(" — ") || "Details not available"}
+                  </span>
+                  <DetailList items={edu.details} />
+                </div>
+              ))
+            ) : (
               <p className="cv-empty-note">None listed</p>
             )}
           </div>
@@ -468,18 +522,23 @@ function CvInterviewSetup() {
           <div className="cv-profile-block">
             <h4>
               <Award size={14} /> Certifications (
-              {profile.certifications?.length || 0})
+              {Array.isArray(profile.certifications)
+                ? profile.certifications.length
+                : 0}
+              )
             </h4>
-            {(profile.certifications || []).map((cert, i) => (
-              <div key={i} className="cv-profile-item">
-                <strong>{cert.name}</strong>
-                <span>
-                  {cert.issuer} — {cert.date}
-                </span>
-              </div>
-            ))}
-            {(!profile.certifications ||
-              profile.certifications.length === 0) && (
+            {hasItems(profile.certifications) ? (
+              profile.certifications.map((cert, i) => (
+                <div key={i} className="cv-profile-item">
+                  <strong>{cert.name || "Certification"}</strong>
+                  <span>
+                    {[cert.issuer, cert.date]
+                      .filter((v) => typeof v === "string" && v.trim())
+                      .join(" — ") || "Details not available"}
+                  </span>
+                </div>
+              ))
+            ) : (
               <p className="cv-empty-note">None listed</p>
             )}
           </div>
