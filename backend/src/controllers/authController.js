@@ -1,7 +1,9 @@
 const authService = require("../services/authService");
 const passwordService = require("../services/passwordService");
-const { removeProfileImageFile } = require("../utils/fileUtils");
-const { uploadDirectory } = require("../middleware/uploadMiddleware");
+const {
+  saveProfileImage,
+  deleteProfileImage: removeStoredImage,
+} = require("../services/imageStorageService");
 
 const register = async (req, res) => {
   const user = await authService.register(req.body);
@@ -50,27 +52,22 @@ const uploadProfileImage = async (req, res) => {
     throw error;
   }
 
-  const imagePath = `/uploads/profile/${req.file.filename}`;
+  const imagePath = await saveProfileImage(req.file);
+  const result = await authService.updateProfileImage(req.user.id, imagePath);
 
-  try {
-    const result = await authService.updateProfileImage(req.user.id, imagePath);
-
-    if (!result.user) {
-      const error = new Error("User not found.");
-      error.statusCode = 404;
-      throw error;
-    }
-
-    await removeProfileImageFile(result.previousImagePath, uploadDirectory);
-    res.json({
-      success: true,
-      message: "Profile picture updated successfully.",
-      user: result.user,
-    });
-  } catch (error) {
-    await removeProfileImageFile(imagePath, uploadDirectory);
+  if (!result.user) {
+    await removeStoredImage(imagePath);
+    const error = new Error("User not found.");
+    error.statusCode = 404;
     throw error;
   }
+
+  await removeStoredImage(result.previousImagePath);
+  res.json({
+    success: true,
+    message: "Profile picture updated successfully.",
+    user: result.user,
+  });
 };
 
 const deleteProfileImage = async (req, res) => {
@@ -82,7 +79,7 @@ const deleteProfileImage = async (req, res) => {
     throw error;
   }
 
-  await removeProfileImageFile(result.previousImagePath, uploadDirectory);
+  await removeStoredImage(result.previousImagePath);
   res.json({
     success: true,
     message: "Profile picture removed successfully.",

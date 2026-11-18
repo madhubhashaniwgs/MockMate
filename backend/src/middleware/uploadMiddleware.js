@@ -1,20 +1,7 @@
-const fs = require("fs");
-const path = require("path");
 const multer = require("multer");
 
-const uploadDirectory = path.join(__dirname, "../uploads/profile");
-fs.mkdirSync(uploadDirectory, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: uploadDirectory,
-  filename: (req, file, callback) => {
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
-    callback(null, uniqueName);
-  },
-});
-
 const profileUpload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, callback) => {
     const allowedTypes = [
@@ -34,5 +21,4 @@ const profileUpload = multer({
 
 module.exports = {
   profileUpload,
-  uploadDirectory,
 };

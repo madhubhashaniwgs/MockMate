@@ -16,8 +16,7 @@ import logo from "../assets/logo1.png";
 import "../styles/Dashboard.css";
 import { getInterviews } from "../services/interviewService";
 import { getProfile } from "../services/authService";
-
-const API_ORIGIN = import.meta.env.VITE_API_URL;
+import { resolveImageUrl } from "../utils/imageUrl";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -246,7 +245,7 @@ function Dashboard() {
           <div className="profile-avatar">
             {user?.profile_image_path ? (
               <img
-                src={`${API_ORIGIN}${user.profile_image_path}`}
+                src={resolveImageUrl(user?.profile_image_path)}
                 alt={`${userName} profile`}
               />
             ) : (

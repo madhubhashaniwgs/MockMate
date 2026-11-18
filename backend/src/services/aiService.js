@@ -10,6 +10,32 @@ const getAiClient = () => {
   return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 };
 
+const FALLBACK_MODELS = [
+  process.env.GEMINI_MODEL || "gemini-3.8-flash",
+  "gemini-3.5-flash-lite",
+];
+
+const isRetryableModelError = (error) => {
+  const status = error?.status ?? error?.statusCode;
+  return status === 503 || status === 429 || status === 404;
+};
+
+const generateContentWithFallback = async (prompt) => {
+  const client = getAiClient();
+  let lastError;
+
+  for (const model of FALLBACK_MODELS) {
+    try {
+      return await client.models.generateContent({ model, contents: prompt });
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableModelError(error)) throw error;
+    }
+  }
+
+  throw lastError;
+};
+
 const parseJsonResponse = (text, message) => {
   const cleanText = text
     .replace(/```json/gi, "")
@@ -60,10 +86,7 @@ Expected format:
 }
 `;
 
-  const response = await getAiClient().models.generateContent({
-    model: "gemini-3.6-flash",
-    contents: prompt,
-  });
+  const response = await generateContentWithFallback(prompt);
   const data = parseJsonResponse(
     response.text || "",
     "Gemini returned invalid question data"
@@ -109,10 +132,7 @@ Rules:
 - improvement must describe one actionable improvement
 `;
 
-  const response = await getAiClient().models.generateContent({
-    model: "gemini-3.6-flash",
-    contents: prompt,
-  });
+  const response = await generateContentWithFallback(prompt);
   const evaluation = parseJsonResponse(
     response.text || "",
     "Gemini returned invalid evaluation data"
