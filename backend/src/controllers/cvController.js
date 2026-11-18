@@ -27,7 +27,18 @@ const analyzeCv = async (req, res) => {
   });
 };
 
+const generateCvQuestions = async (req, res) => {
+  const questions = await cvService.generateCvInterviewQuestions(req.body || {});
+
+  res.json({
+    success: true,
+    message: "Questions generated successfully",
+    questions,
+  });
+};
+
 module.exports = {
   parseCv,
   analyzeCv,
+  generateCvQuestions,
 };

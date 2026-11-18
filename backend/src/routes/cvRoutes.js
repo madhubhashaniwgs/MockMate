@@ -19,4 +19,10 @@ router.post(
   asyncHandler(cvController.analyzeCv)
 );
 
+router.post(
+  "/generate-questions",
+  authMiddleware,
+  asyncHandler(cvController.generateCvQuestions)
+);
+
 module.exports = router;
