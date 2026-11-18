@@ -31,20 +31,30 @@ const isRetryableModelError = (error) => {
 
 const generateContentWithFallback = async (
   prompt,
-  { maxOutputTokens, responseJsonSchema }
+  { maxOutputTokens, responseJsonSchema, timeoutMs = REQUEST_TIMEOUT_MS }
 ) => {
   const client = getAiClient();
+  const deadline = Date.now() + timeoutMs;
   let lastError;
 
   for (let i = 0; i < MODEL_CHAIN.length; i++) {
     const model = MODEL_CHAIN[i];
+    const remainingMs = deadline - Date.now();
+
+    if (remainingMs <= 0) {
+      const timeoutError = new Error(
+        `AI request timed out after ${timeoutMs}ms across all models.`
+      );
+      timeoutError.statusCode = 504;
+      throw timeoutError;
+    }
 
     try {
       return await client.models.generateContent({
         model,
         contents: prompt,
         config: {
-          abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+          abortSignal: AbortSignal.timeout(remainingMs),
           maxOutputTokens,
           responseMimeType: "application/json",
           responseJsonSchema,
@@ -53,6 +63,15 @@ const generateContentWithFallback = async (
       });
     } catch (error) {
       lastError = error;
+
+      if (error?.name === "AbortError" || error?.name === "TimeoutError") {
+        const timeoutError = new Error(
+          `AI request timed out after ${timeoutMs}ms across all models.`
+        );
+        timeoutError.statusCode = 504;
+        throw timeoutError;
+      }
+
       const nextModel = MODEL_CHAIN[i + 1];
       const status = error?.status ?? error?.statusCode ?? "unknown";
 
@@ -394,6 +413,7 @@ Rules:
   const response = await generateContentWithFallback(prompt, {
     maxOutputTokens: 8192,
     responseJsonSchema: CV_PROFILE_SCHEMA,
+    timeoutMs: 50000,
   });
   const data = parseJsonResponse(
     response.text || "",
