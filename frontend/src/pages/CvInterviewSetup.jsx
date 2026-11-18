@@ -21,6 +21,7 @@ import {
 
 import "../styles/CvInterviewSetup.css";
 import AlertPopup from "../components/AlertPopup";
+import { analyzeCv, parseCv } from "../services/cvService";
 
 const STEPS = [
   { id: "upload", label: "Upload CV" },
@@ -124,6 +125,8 @@ function CvInterviewSetup() {
   const [questionCount, setQuestionCount] = useState(5);
   const [alertMessage, setAlertMessage] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [processingStage, setProcessingStage] = useState("");
+  const [processing, setProcessing] = useState(false);
 
   const currentStepIndex = STEPS.findIndex((s) => s.id === step);
 
@@ -184,18 +187,68 @@ function CvInterviewSetup() {
     setQuestionCount(5);
     setAlertMessage("");
     setDragOver(false);
+    setProcessingStage("");
+    setProcessing(false);
   };
 
-  const handleUploadContinue = () => {
-    if (!cvFile) {
-      setAlertMessage("Please select a CV file to continue.");
+  const handleUploadContinue = async () => {
+    if (!cvFile || processing) {
       return;
     }
 
-    // The "analyzing" step will call POST /api/cv/parse and
-    // POST /api/cv/analyze in the API integration step. cvProfile stays
-    // null until real analysis data exists so the sample banner shows.
-    setStep("preview");
+    try {
+      setProcessing(true);
+      setAlertMessage("");
+
+      setProcessingStage("parsing");
+      setStep("analyzing");
+
+      const parseResult = await parseCv(cvFile);
+      const extractedText = parseResult?.cv?.text;
+
+      if (typeof extractedText !== "string" || !extractedText.trim()) {
+        throw new Error(
+          "The CV file did not contain readable text. Please try a different file."
+        );
+      }
+
+      setProcessingStage("analyzing");
+      const analysisResult = await analyzeCv(extractedText);
+      const profile = analysisResult?.profile;
+
+      const hasMeaningfulValue = (value) => {
+        if (typeof value === "string") return value.trim().length > 0;
+        if (Array.isArray(value)) return value.some(hasMeaningfulValue);
+        if (value && typeof value === "object") {
+          return Object.values(value).some(hasMeaningfulValue);
+        }
+        return false;
+      };
+
+      if (
+        !profile ||
+        typeof profile !== "object" ||
+        Array.isArray(profile) ||
+        !Object.values(profile).some(hasMeaningfulValue)
+      ) {
+        throw new Error(
+          "AI analysis returned an invalid profile. Please try again."
+        );
+      }
+
+      setCvProfile(profile);
+      setProcessingStage("");
+      setStep("preview");
+    } catch (error) {
+      console.error("CV processing error:", error.message);
+      setProcessingStage("");
+      setStep("upload");
+      setAlertMessage(
+        error.message || "Failed to process your CV. Please try again."
+      );
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleGenerateQuestions = () => {
@@ -271,10 +324,10 @@ function CvInterviewSetup() {
       <button
         type="button"
         className="cv-continue-btn"
-        disabled={!cvFile}
+        disabled={!cvFile || processing}
         onClick={handleUploadContinue}
       >
-        Continue
+        {processing ? "Processing..." : "Continue"}
         <ArrowRight size={16} />
       </button>
     </div>
@@ -287,12 +340,14 @@ function CvInterviewSetup() {
       </div>
       <h2>Analyzing your CV</h2>
       <p>
-        AI analysis will extract your skills, experience, projects and
-        education here in the next phase.
+        {processingStage === "analyzing"
+          ? "Extracting skills, experience and projects with AI..."
+          : "Uploading and reading your CV file..."}
       </p>
       <button
         type="button"
         className="cv-back-btn"
+        disabled={processing}
         onClick={() => setStep("upload")}
       >
         <ArrowLeft size={16} />
