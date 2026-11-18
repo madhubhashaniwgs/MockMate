@@ -6,6 +6,7 @@ const pool = require("./config/database");
 const authRoutes = require("./routes/auth");
 const interviewRoutes = require("./routes/interviewRoutes");
 const aiRoutes = require("./routes/aiRoutes");
+const cvRoutes = require("./routes/cvRoutes");
 const errorHandler = require("./middleware/errorHandler");
 
 
@@ -36,6 +37,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/cv", cvRoutes);
 const path = require("path");
 
 app.use(
