@@ -13,4 +13,10 @@ router.post(
   asyncHandler(cvController.parseCv)
 );
 
+router.post(
+  "/analyze",
+  authMiddleware,
+  asyncHandler(cvController.analyzeCv)
+);
+
 module.exports = router;

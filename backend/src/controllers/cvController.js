@@ -16,6 +16,18 @@ const parseCv = async (req, res) => {
   });
 };
 
+const analyzeCv = async (req, res) => {
+  const { cvText } = req.body || {};
+  const profile = await cvService.analyzeCvText(cvText);
+
+  res.json({
+    success: true,
+    message: "CV analyzed successfully.",
+    profile,
+  });
+};
+
 module.exports = {
   parseCv,
+  analyzeCv,
 };
