@@ -473,6 +473,7 @@ Expected format:
   const response = await generateContentWithFallback(prompt, {
     maxOutputTokens: 1024,
     responseJsonSchema: QUESTIONS_SCHEMA,
+    timeoutMs: 50000,
   });
   const data = parseJsonResponse(
     response.text || "",
