@@ -1,0 +1,665 @@
+import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import logo from "../assets/logo1.png";
+
+import {
+  ArrowLeft,
+  ArrowRight,
+  Award,
+  Briefcase,
+  FileText,
+  FileUp,
+  FolderKanban,
+  Gauge,
+  GraduationCap,
+  ListChecks,
+  Sparkles,
+  User,
+  Users,
+  X,
+} from "lucide-react";
+
+import "../styles/CvInterviewSetup.css";
+import AlertPopup from "../components/AlertPopup";
+
+const STEPS = [
+  { id: "upload", label: "Upload CV" },
+  { id: "analyzing", label: "Analyzing CV" },
+  { id: "preview", label: "Profile Preview" },
+  { id: "config", label: "Configuration" },
+  { id: "generating", label: "Generating" },
+];
+
+const MAX_CV_SIZE = 4 * 1024 * 1024;
+const ACCEPTED_EXTENSIONS = [".pdf", ".docx"];
+const ACCEPTED_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/octet-stream",
+  "application/zip",
+  "",
+];
+
+const jobRoles = [
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "Software Engineer",
+  "Data Analyst",
+  "QA Engineer",
+];
+
+const difficulties = [
+  {
+    value: "Easy",
+    title: "Easy",
+    description: "Fundamental interview questions",
+  },
+  {
+    value: "Medium",
+    title: "Medium",
+    description: "Practical technical questions",
+  },
+  {
+    value: "Hard",
+    title: "Hard",
+    description: "Advanced technical questions",
+  },
+];
+
+const questionCounts = [5, 10, 15];
+
+// Placeholder data used ONLY to preview the layout. Real profile data will
+// come from POST /api/cv/analyze once the API integration step is added.
+const SAMPLE_PROFILE = {
+  personalSummary:
+    "Software engineer with experience building web applications.",
+  technicalSkills: ["JavaScript", "React", "Node.js"],
+  softSkills: ["Communication", "Teamwork"],
+  projects: [
+    {
+      name: "Sample Project",
+      description: "Example project description.",
+      technologies: ["React", "Node.js"],
+      responsibilities: ["Example responsibility"],
+      achievements: ["Example achievement"],
+    },
+  ],
+  workExperience: [
+    {
+      jobTitle: "Developer",
+      company: "Example Corp",
+      duration: "2020 - Present",
+      responsibilities: ["Example responsibility"],
+    },
+  ],
+  education: [
+    {
+      qualification: "BSc Computer Science",
+      institution: "Example University",
+      duration: "2016 - 2020",
+      details: [],
+    },
+  ],
+  certifications: [
+    { name: "Example Certification", issuer: "Example Institute", date: "2022" },
+  ],
+  otherSkills: ["Public Speaking"],
+};
+
+const formatFileSize = (bytes) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+function CvInterviewSetup() {
+  const fileInputRef = useRef(null);
+
+  const [step, setStep] = useState("upload");
+  const [cvFile, setCvFile] = useState(null);
+  const [cvProfile, setCvProfile] = useState(null);
+  const [jobRole, setJobRole] = useState("");
+  const [difficulty, setDifficulty] = useState("");
+  const [questionCount, setQuestionCount] = useState(5);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+
+  const currentStepIndex = STEPS.findIndex((s) => s.id === step);
+
+  const validateCvFile = (file) => {
+    const extension = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+
+    if (!ACCEPTED_EXTENSIONS.includes(extension)) {
+      return "Only PDF and DOCX files are supported.";
+    }
+
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      return "The selected file does not appear to be a valid PDF or DOCX document.";
+    }
+
+    if (file.size > MAX_CV_SIZE) {
+      return "CV file must be 4MB or smaller.";
+    }
+
+    return "";
+  };
+
+  const handleFileSelect = (file) => {
+    if (!file) return;
+
+    const validationError = validateCvFile(file);
+
+    if (validationError) {
+      setAlertMessage(validationError);
+      return;
+    }
+
+    setCvFile(file);
+    setAlertMessage("");
+  };
+
+  const handleInputChange = (event) => {
+    handleFileSelect(event.target.files?.[0]);
+    event.target.value = "";
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setDragOver(false);
+    handleFileSelect(event.dataTransfer.files?.[0]);
+  };
+
+  const removeFile = () => {
+    setCvFile(null);
+    setAlertMessage("");
+  };
+
+  const resetWizard = () => {
+    setStep("upload");
+    setCvFile(null);
+    setCvProfile(null);
+    setJobRole("");
+    setDifficulty("");
+    setQuestionCount(5);
+    setAlertMessage("");
+    setDragOver(false);
+  };
+
+  const handleUploadContinue = () => {
+    if (!cvFile) {
+      setAlertMessage("Please select a CV file to continue.");
+      return;
+    }
+
+    // The "analyzing" step will call POST /api/cv/parse and
+    // POST /api/cv/analyze in the API integration step. cvProfile stays
+    // null until real analysis data exists so the sample banner shows.
+    setStep("preview");
+  };
+
+  const handleGenerateQuestions = () => {
+    // Question generation via POST /api/cv/generate-questions and
+    // navigation to /mock-interview will be wired in the next step.
+    setAlertMessage(
+      "Question generation is not connected yet. This step will be enabled in the next phase."
+    );
+  };
+
+  const profile = cvProfile || SAMPLE_PROFILE;
+  const isSampleProfile = !cvProfile;
+
+  const renderUploadStep = () => (
+    <div className="cv-setup-section">
+      <div className="cv-section-title">
+        <div className="cv-section-icon">
+          <FileUp size={18} />
+        </div>
+        <div>
+          <h2>Upload your CV</h2>
+          <p>
+            Select a PDF or DOCX resume (maximum 4MB). Your CV is processed
+            securely and is not stored permanently.
+          </p>
+        </div>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.docx"
+        className="cv-file-input"
+        onChange={handleInputChange}
+      />
+
+      {!cvFile ? (
+        <button
+          type="button"
+          className={`cv-dropzone ${dragOver ? "drag-over" : ""}`}
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+        >
+          <FileText size={34} />
+          <strong>Drop your CV here or click to browse</strong>
+          <span>PDF or DOCX — up to 4MB</span>
+        </button>
+      ) : (
+        <div className="cv-file-card">
+          <div className="cv-file-icon">
+            <FileText size={22} />
+          </div>
+          <div className="cv-file-info">
+            <strong>{cvFile.name}</strong>
+            <span>{formatFileSize(cvFile.size)}</span>
+          </div>
+          <button
+            type="button"
+            className="cv-file-remove"
+            onClick={removeFile}
+            aria-label="Remove selected file"
+          >
+            <X size={17} />
+          </button>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="cv-continue-btn"
+        disabled={!cvFile}
+        onClick={handleUploadContinue}
+      >
+        Continue
+        <ArrowRight size={16} />
+      </button>
+    </div>
+  );
+
+  const renderAnalyzingStep = () => (
+    <div className="cv-setup-section cv-placeholder-section">
+      <div className="cv-placeholder-icon">
+        <Sparkles size={30} />
+      </div>
+      <h2>Analyzing your CV</h2>
+      <p>
+        AI analysis will extract your skills, experience, projects and
+        education here in the next phase.
+      </p>
+      <button
+        type="button"
+        className="cv-back-btn"
+        onClick={() => setStep("upload")}
+      >
+        <ArrowLeft size={16} />
+        Back
+      </button>
+    </div>
+  );
+
+  const SkillChips = ({ items }) =>
+    items && items.length > 0 ? (
+      <div className="cv-skill-chips">
+        {items.map((item, index) => (
+          <span key={index} className="cv-skill-chip">
+            {item}
+          </span>
+        ))}
+      </div>
+    ) : (
+      <p className="cv-empty-note">None listed</p>
+    );
+
+  const renderPreviewStep = () => (
+    <div className="cv-setup-section">
+      <div className="cv-section-title">
+        <div className="cv-section-icon">
+          <User size={18} />
+        </div>
+        <div>
+          <h2>Review your CV profile</h2>
+          <p>
+            This is the information the AI extracted from your CV. You can go
+            back to upload a different file.
+          </p>
+        </div>
+      </div>
+
+      {isSampleProfile && (
+        <div className="cv-sample-banner">
+          Sample preview — AI analysis is not connected yet. The layout below
+          shows how your real profile will appear.
+        </div>
+      )}
+
+      <div className="cv-profile-card">
+        <div className="cv-profile-summary">
+          <h3>Personal Summary</h3>
+          <p>{profile.personalSummary || "Not available"}</p>
+        </div>
+
+        <div className="cv-profile-grid">
+          <div className="cv-profile-block">
+            <h4>
+              <Sparkles size={14} /> Technical Skills
+            </h4>
+            <SkillChips items={profile.technicalSkills} />
+          </div>
+
+          <div className="cv-profile-block">
+            <h4>
+              <Users size={14} /> Soft Skills
+            </h4>
+            <SkillChips items={profile.softSkills} />
+          </div>
+
+          <div className="cv-profile-block">
+            <h4>
+              <FolderKanban size={14} /> Projects ({profile.projects?.length || 0})
+            </h4>
+            {(profile.projects || []).map((project, i) => (
+              <div key={i} className="cv-profile-item">
+                <strong>{project.name}</strong>
+                <span>{project.description}</span>
+                <SkillChips items={project.technologies} />
+              </div>
+            ))}
+            {(!profile.projects || profile.projects.length === 0) && (
+              <p className="cv-empty-note">None listed</p>
+            )}
+          </div>
+
+          <div className="cv-profile-block">
+            <h4>
+              <Briefcase size={14} /> Work Experience (
+              {profile.workExperience?.length || 0})
+            </h4>
+            {(profile.workExperience || []).map((job, i) => (
+              <div key={i} className="cv-profile-item">
+                <strong>{job.jobTitle}</strong>
+                <span>
+                  {job.company} — {job.duration}
+                </span>
+              </div>
+            ))}
+            {(!profile.workExperience ||
+              profile.workExperience.length === 0) && (
+              <p className="cv-empty-note">None listed</p>
+            )}
+          </div>
+
+          <div className="cv-profile-block">
+            <h4>
+              <GraduationCap size={14} /> Education (
+              {profile.education?.length || 0})
+            </h4>
+            {(profile.education || []).map((edu, i) => (
+              <div key={i} className="cv-profile-item">
+                <strong>{edu.qualification}</strong>
+                <span>
+                  {edu.institution} — {edu.duration}
+                </span>
+              </div>
+            ))}
+            {(!profile.education || profile.education.length === 0) && (
+              <p className="cv-empty-note">None listed</p>
+            )}
+          </div>
+
+          <div className="cv-profile-block">
+            <h4>
+              <Award size={14} /> Certifications (
+              {profile.certifications?.length || 0})
+            </h4>
+            {(profile.certifications || []).map((cert, i) => (
+              <div key={i} className="cv-profile-item">
+                <strong>{cert.name}</strong>
+                <span>
+                  {cert.issuer} — {cert.date}
+                </span>
+              </div>
+            ))}
+            {(!profile.certifications ||
+              profile.certifications.length === 0) && (
+              <p className="cv-empty-note">None listed</p>
+            )}
+          </div>
+
+          <div className="cv-profile-block">
+            <h4>
+              <ListChecks size={14} /> Other Skills
+            </h4>
+            <SkillChips items={profile.otherSkills} />
+          </div>
+        </div>
+      </div>
+
+      <div className="cv-step-actions">
+        <button
+          type="button"
+          className="cv-back-btn"
+          onClick={resetWizard}
+        >
+          <ArrowLeft size={16} />
+          Re-upload CV
+        </button>
+        <button
+          type="button"
+          className="cv-continue-btn"
+          onClick={() => setStep("config")}
+        >
+          Configure Interview
+          <ArrowRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderConfigStep = () => (
+    <div className="cv-setup-section">
+      <div className="cv-section-title">
+        <div className="cv-section-icon">
+          <Gauge size={18} />
+        </div>
+        <div>
+          <h2>Configure your interview</h2>
+          <p>
+            Optionally choose a target role, difficulty and question count.
+            Leave the role on auto-detect to let the AI decide from your CV.
+          </p>
+        </div>
+      </div>
+
+      <div className="cv-config-group">
+        <h3>Target job role</h3>
+        <div className="cv-role-grid">
+          <button
+            type="button"
+            className={`cv-role-option ${jobRole === "" ? "selected" : ""}`}
+            onClick={() => setJobRole("")}
+          >
+            <Sparkles size={15} />
+            <span>Auto-detect from CV</span>
+          </button>
+          {jobRoles.map((role) => (
+            <button
+              type="button"
+              key={role}
+              className={`cv-role-option ${jobRole === role ? "selected" : ""}`}
+              onClick={() => setJobRole(role)}
+            >
+              {role}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="cv-config-group">
+        <h3>Difficulty</h3>
+        <div className="cv-difficulty-grid">
+          {difficulties.map((level) => (
+            <button
+              type="button"
+              key={level.value}
+              className={`cv-difficulty-option ${
+                difficulty === level.value ? "selected" : ""
+              }`}
+              onClick={() => setDifficulty(level.value)}
+            >
+              <span>{level.title}</span>
+              <p>{level.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="cv-config-group">
+        <h3>Number of questions</h3>
+        <div className="cv-count-options">
+          {questionCounts.map((count) => (
+            <button
+              type="button"
+              key={count}
+              className={`cv-count-option ${
+                questionCount === count ? "selected" : ""
+              }`}
+              onClick={() => setQuestionCount(count)}
+            >
+              {count}
+              <span>questions</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="cv-config-summary">
+        <div>
+          <span>Job role</span>
+          <strong>{jobRole || "Auto-detect from CV"}</strong>
+        </div>
+        <div>
+          <span>Difficulty</span>
+          <strong>{difficulty || "Auto"}</strong>
+        </div>
+        <div>
+          <span>Questions</span>
+          <strong>{questionCount}</strong>
+        </div>
+      </div>
+
+      <div className="cv-step-actions">
+        <button
+          type="button"
+          className="cv-back-btn"
+          onClick={() => setStep("preview")}
+        >
+          <ArrowLeft size={16} />
+          Back
+        </button>
+        <button
+          type="button"
+          className="cv-continue-btn"
+          onClick={handleGenerateQuestions}
+        >
+          Generate Questions
+          <ArrowRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderGeneratingStep = () => (
+    <div className="cv-setup-section cv-placeholder-section">
+      <div className="cv-placeholder-icon">
+        <Sparkles size={30} />
+      </div>
+      <h2>Generating your interview</h2>
+      <p>
+        Personalized questions based on your CV profile will appear here in
+        the next phase.
+      </p>
+      <button
+        type="button"
+        className="cv-back-btn"
+        onClick={() => setStep("config")}
+      >
+        <ArrowLeft size={16} />
+        Back to Configuration
+      </button>
+    </div>
+  );
+
+  const stepContent = {
+    upload: renderUploadStep,
+    analyzing: renderAnalyzingStep,
+    preview: renderPreviewStep,
+    config: renderConfigStep,
+    generating: renderGeneratingStep,
+  }[step];
+
+  return (
+    <div className="cv-interview-setup-page">
+      <AlertPopup
+        message={alertMessage}
+        onClose={() => setAlertMessage("")}
+      />
+
+      <header className="cv-setup-header">
+        <Link to="/dashboard" className="cv-setup-back-link">
+          <ArrowLeft size={17} />
+          Back to Dashboard
+        </Link>
+
+        <Link to="/" className="cv-setup-logo">
+          <img src={logo} alt="MockMate" />
+          <span>MockMate</span>
+        </Link>
+      </header>
+
+      <main className="cv-setup-container">
+        <section className="cv-setup-heading">
+          <div className="cv-setup-heading-icon">
+            <FileText size={28} />
+          </div>
+          <div>
+            <p>AI MOCK INTERVIEW</p>
+            <h1>CV-based interview</h1>
+            <span>
+              Upload your CV and let AI build a personalized interview.
+            </span>
+          </div>
+        </section>
+
+        <div className="cv-step-indicator">
+          {STEPS.map((s, index) => (
+            <div
+              key={s.id}
+              className={`cv-step-item ${
+                index === currentStepIndex
+                  ? "active"
+                  : index < currentStepIndex
+                    ? "completed"
+                    : ""
+              }`}
+            >
+              <span className="cv-step-dot">
+                {index < currentStepIndex ? "✓" : index + 1}
+              </span>
+              <span className="cv-step-label">{s.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <section className="cv-setup-card">
+          {stepContent && stepContent()}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+export default CvInterviewSetup;
