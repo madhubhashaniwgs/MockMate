@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import InterviewSetup from "./pages/InterviewSetup";
+import CvInterviewSetup from "./pages/CvInterviewSetup";
 import InterviewResult from "./pages/InterviewResult";
 import InterviewHistory from "./pages/InterviewHistory";
 import MockInterview from "./pages/MockInterview";
@@ -53,6 +54,11 @@ function App() {
           <Route
             path="/interview-setup"
             element={<InterviewSetup />}
+          />
+
+          <Route
+            path="/cv-interview-setup"
+            element={<CvInterviewSetup />}
           />
 
           <Route
