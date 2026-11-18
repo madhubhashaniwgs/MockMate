@@ -27,8 +27,7 @@ import {
   removeProfileImage,
 } from "../services/authService";
 import { validateEmail, validateName } from "../utils/validation";
-
-const API_ORIGIN = import.meta.env.VITE_API_URL;
+import { resolveImageUrl } from "../utils/imageUrl";
 
 function Profile() {
   
@@ -478,7 +477,7 @@ function Profile() {
               <div className="profile-large-avatar">
                 {user.profile_image_path ? (
                   <img
-                    src={`${API_ORIGIN}${user.profile_image_path}`}
+                    src={resolveImageUrl(user.profile_image_path)}
                     alt={`${userName} profile`}
                   />
                 ) : (
