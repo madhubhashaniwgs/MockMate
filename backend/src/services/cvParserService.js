@@ -1,6 +1,5 @@
 const path = require("path");
 const mammoth = require("mammoth");
-const { extractText } = require("unpdf");
 
 const PDF_MIME = "application/pdf";
 const DOCX_MIME =
@@ -51,6 +50,7 @@ const extractionError = (cause) => {
 };
 
 const extractPdfText = async (buffer) => {
+  const { extractText } = await import("unpdf");
   const result = await extractText(new Uint8Array(buffer), {
     mergePages: true,
   });
