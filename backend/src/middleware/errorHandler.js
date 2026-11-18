@@ -5,10 +5,17 @@ const errorHandler = (error, req, res, next) => {
     return next(error);
   }
 
-  res.status(error.statusCode || 500).json({
-    message: error.statusCode
-      ? error.message
-      : "Internal server error.",
+  const upstreamStatus = Number(error.status);
+  const isUpstreamServerError =
+    upstreamStatus >= 500 && upstreamStatus <= 599;
+
+  const status =
+    error.statusCode || (isUpstreamServerError ? upstreamStatus : 500);
+  const hasKnownStatus =
+    Boolean(error.statusCode) || isUpstreamServerError;
+
+  res.status(status).json({
+    message: hasKnownStatus ? error.message : "Internal server error.",
   });
 };
 
