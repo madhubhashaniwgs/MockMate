@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo1.png";
 
 import {
@@ -21,7 +21,7 @@ import {
 
 import "../styles/CvInterviewSetup.css";
 import AlertPopup from "../components/AlertPopup";
-import { analyzeCv, parseCv } from "../services/cvService";
+import { analyzeCv, generateCvQuestions, parseCv } from "../services/cvService";
 
 const STEPS = [
   { id: "upload", label: "Upload CV" },
@@ -115,6 +115,7 @@ const formatFileSize = (bytes) => {
 };
 
 function CvInterviewSetup() {
+  const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
   const [step, setStep] = useState("upload");
@@ -251,12 +252,61 @@ function CvInterviewSetup() {
     }
   };
 
-  const handleGenerateQuestions = () => {
-    // Question generation via POST /api/cv/generate-questions and
-    // navigation to /mock-interview will be wired in the next step.
-    setAlertMessage(
-      "Question generation is not connected yet. This step will be enabled in the next phase."
-    );
+  const handleGenerateQuestions = async () => {
+    if (processing) {
+      return;
+    }
+
+    if (!cvProfile || typeof cvProfile !== "object") {
+      setAlertMessage("CV profile is missing. Please re-upload your CV.");
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      setProcessingStage("generating");
+      setAlertMessage("");
+
+      const data = await generateCvQuestions({
+        profile: cvProfile,
+        jobRole: jobRole || undefined,
+        difficulty: difficulty || undefined,
+        questionCount,
+      });
+
+      const questions = Array.isArray(data?.questions)
+        ? data.questions.filter(
+            (q) =>
+              q &&
+              typeof q === "object" &&
+              typeof q.question === "string" &&
+              q.question.trim()
+          )
+        : [];
+
+      if (questions.length === 0) {
+        throw new Error("No valid interview questions were generated.");
+      }
+
+      localStorage.removeItem("activeInterviewSession");
+
+      navigate("/mock-interview", {
+        state: {
+          jobRole: jobRole || "CV-based interview",
+          difficulty: difficulty || "Medium",
+          questionCount: questions.length,
+          questions,
+        },
+      });
+    } catch (error) {
+      console.error("CV question generation error:", error.message);
+      setProcessingStage("");
+      setAlertMessage(
+        error.message || "Failed to generate interview questions."
+      );
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const profile = cvProfile || SAMPLE_PROFILE;
@@ -677,9 +727,10 @@ function CvInterviewSetup() {
         <button
           type="button"
           className="cv-continue-btn"
+          disabled={processing}
           onClick={handleGenerateQuestions}
         >
-          Generate Questions
+          {processing ? "Generating Questions..." : "Generate Questions"}
           <ArrowRight size={16} />
         </button>
       </div>
@@ -693,8 +744,9 @@ function CvInterviewSetup() {
       </div>
       <h2>Generating your interview</h2>
       <p>
-        Personalized questions based on your CV profile will appear here in
-        the next phase.
+        {processingStage === "generating"
+          ? "Creating personalized questions from your CV profile..."
+          : "Personalized questions based on your CV profile will appear here shortly."}
       </p>
       <button
         type="button"
