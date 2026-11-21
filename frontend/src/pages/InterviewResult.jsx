@@ -8,6 +8,7 @@ import {
   RotateCcw,
   History,
   CheckCircle2,
+  FileUp,
   TrendingUp,
   Lightbulb,
   Target,
@@ -21,6 +22,7 @@ function InterviewResult() {
   const navigate = useNavigate();
 
   const interviewData = location.state || {};
+  const isCvInterview = Boolean(interviewData.isCvInterview);
 
   const [savedInterview, setSavedInterview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -436,6 +438,13 @@ function InterviewResult() {
               <strong>
                 {jobRole}
               </strong>
+
+              {isCvInterview && (
+                <span className="cv-interview-badge">
+                  <FileUp size={11} />
+                  CV-based
+                </span>
+              )}
 
             </div>
 

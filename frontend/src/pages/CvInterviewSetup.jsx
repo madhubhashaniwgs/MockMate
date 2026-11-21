@@ -122,7 +122,7 @@ function CvInterviewSetup() {
   const [cvFile, setCvFile] = useState(null);
   const [cvProfile, setCvProfile] = useState(null);
   const [jobRole, setJobRole] = useState("");
-  const [difficulty, setDifficulty] = useState("");
+  const [difficulty, setDifficulty] = useState("Easy");
   const [questionCount, setQuestionCount] = useState(5);
   const [alertMessage, setAlertMessage] = useState("");
   const [dragOver, setDragOver] = useState(false);
@@ -184,7 +184,7 @@ function CvInterviewSetup() {
     setCvFile(null);
     setCvProfile(null);
     setJobRole("");
-    setDifficulty("");
+    setDifficulty("Easy");
     setQuestionCount(5);
     setAlertMessage("");
     setDragOver(false);
@@ -292,6 +292,7 @@ function CvInterviewSetup() {
 
       navigate("/mock-interview", {
         state: {
+          isCvInterview: true,
           jobRole: jobRole || "CV-based interview",
           difficulty: difficulty || "Medium",
           questionCount: questions.length,
@@ -394,6 +395,11 @@ function CvInterviewSetup() {
           ? "Extracting skills, experience and projects with AI..."
           : "Uploading and reading your CV file..."}
       </p>
+
+      <div className="cv-progress-track">
+        <div className="cv-progress-bar" />
+      </div>
+
       <button
         type="button"
         className="cv-back-btn"
@@ -748,6 +754,10 @@ function CvInterviewSetup() {
           ? "Creating personalized questions from your CV profile..."
           : "Personalized questions based on your CV profile will appear here shortly."}
       </p>
+      <div className="cv-progress-track">
+        <div className="cv-progress-bar" />
+      </div>
+
       <button
         type="button"
         className="cv-back-btn"
