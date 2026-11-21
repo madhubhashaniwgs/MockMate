@@ -10,6 +10,7 @@ import {
   BriefcaseBusiness,
   CheckCircle2,
   Clock3,
+  FileUp,
   Lightbulb,
   Send,
 } from "lucide-react";
@@ -50,6 +51,7 @@ function MockInterview() {
 
   const jobRole = interviewData?.jobRole || "";
   const difficulty = interviewData?.difficulty || "";
+  const isCvInterview = Boolean(interviewData?.isCvInterview);
   const questions = Array.isArray(interviewData?.questions)
     ? interviewData.questions
     : [];
@@ -552,6 +554,8 @@ function MockInterview() {
               finalScore,
 
               interviewId,
+
+              isCvInterview,
             },
           }
         );
@@ -744,6 +748,13 @@ function MockInterview() {
           <span className="difficulty-label">
             {difficulty}
           </span>
+
+          {isCvInterview && (
+            <span className="cv-interview-badge">
+              <FileUp size={12} />
+              CV-based
+            </span>
+          )}
 
         </div>
 

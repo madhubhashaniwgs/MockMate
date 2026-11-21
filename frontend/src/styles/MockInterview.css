@@ -1809,3 +1809,20 @@
     width: 100%;
   }
 }
+
+/* CV-based interview badge */
+.cv-interview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(56,189,248,0.4);
+  background: rgba(56,189,248,0.1);
+  color: #7dd3fc;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
