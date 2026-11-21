@@ -277,3 +277,10 @@ to provide users with a complete career preparation experience.
 <img src="screenshots/performance.png" width="800">
 
 
+
+## Documentation
+
+- [CV-Based Mock Interview](docs/cv-interview.md) — architecture, API contracts, AI integration, testing, deployment
+- [API Design](docs/api-design.md)
+- [Database Design](docs/database-design.md)
+- [Project Plan](docs/project-plan.md)

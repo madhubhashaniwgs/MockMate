@@ -106,6 +106,66 @@ const hasProfileContent = (profile) => {
   );
 };
 
+// Compact profile for question generation only. Trims verbose text and caps
+// array sizes so the prompt stays ~30-40KB; the original profile used for
+// preview is never modified.
+const boundText = (value, max) =>
+  typeof value === "string" && value.trim() ? value.trim().slice(0, max) : "";
+
+const boundStringList = (value, maxItems, maxLen) =>
+  (Array.isArray(value) ? value : [])
+    .map((item) => (typeof item === "string" ? item.trim().slice(0, maxLen) : ""))
+    .filter(Boolean)
+    .slice(0, maxItems);
+
+const hasAnyContent = (obj) =>
+  Object.values(obj).some((v) => (Array.isArray(v) ? v.length > 0 : Boolean(v)));
+
+const compactObjectArray = (value, maxItems, spec) =>
+  (Array.isArray(value) ? value : [])
+    .map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+      const out = {};
+      for (const [key, limit] of Object.entries(spec)) {
+        out[key] = Array.isArray(limit)
+          ? boundStringList(item[key], limit[0], limit[1])
+          : boundText(item[key], limit);
+      }
+      return hasAnyContent(out) ? out : null;
+    })
+    .filter(Boolean)
+    .slice(0, maxItems);
+
+const compactCvProfile = (profile) => ({
+  personalSummary: boundText(profile.personalSummary, 600),
+  technicalSkills: boundStringList(profile.technicalSkills, 40, 80),
+  softSkills: boundStringList(profile.softSkills, 30, 80),
+  otherSkills: boundStringList(profile.otherSkills, 30, 80),
+  projects: compactObjectArray(profile.projects, 8, {
+    name: 120,
+    description: 400,
+    technologies: [15, 60],
+    responsibilities: [6, 160],
+    achievements: [6, 160],
+  }),
+  workExperience: compactObjectArray(profile.workExperience, 8, {
+    jobTitle: 100,
+    company: 100,
+    duration: 60,
+    responsibilities: [6, 160],
+  }),
+  education: compactObjectArray(profile.education, 6, {
+    qualification: 150,
+    institution: 150,
+    duration: 80,
+    details: [6, 160],
+  }),
+  certifications: compactObjectArray(profile.certifications, 8, {
+    name: 120,
+    issuer: 100,
+    date: 60,
+  }),
+});
 // CV profile is processed in memory only and never persisted or logged.
 const generateCvInterviewQuestions = async ({
   profile,
@@ -154,7 +214,7 @@ const generateCvInterviewQuestions = async ({
       : undefined;
 
   return generateCvQuestions({
-    profile,
+    profile: compactCvProfile(profile),
     jobRole: cleanJobRole,
     difficulty: cleanDifficulty,
     questionCount: count,
